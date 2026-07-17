@@ -15,6 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 import uvicorn
+from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
 # ============ 配置 ============
 BASE_DIR = Path(__file__).parent
@@ -22,6 +25,25 @@ DB_PATH = BASE_DIR / "esg_4_0.db"
 HTML_PATH = BASE_DIR / "ESG碳核算助手4.0.html"
 SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)  # 生产环境用环境变量固定，避免重启后 token 失效
 TOKEN_EXPIRE_DAYS = 7
+
+# DeepSeek AI 配置
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+AI_CLIENT = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL) if DEEPSEEK_API_KEY else None
+
+# AI 系统提示词
+SYSTEM_PROMPT = """你是 ESG 碳核算领域的资深专家，拥有 20 年碳排放管理经验。你精通：
+- GHG Protocol、ISO 14064-1、GB/T 32150-2015 等核算标准
+- 中国"双碳"政策体系和碳交易市场
+- 各行业碳减排技术和最佳实践
+- 碳排放数据结构分析和异常诊断
+
+你的回答风格：专业但不晦涩，用数据说话，给出具体可操作的建议。每次分析都要：
+1. 先总结关键发现
+2. 按 Scope 1/2/3 分解分析
+3. 指出异常或需要关注的指标
+4. 给出 3-5 条具体减排建议（带优先级）
+5. 如适用，提醒合规注意事项"""
 
 # ============ 数据库 ============
 def get_db():
@@ -321,6 +343,109 @@ def get_factors():
         "heatFactor": 0.11,
         "scope3Factors": {"business_travel": 0.00018, "employee_commute": 0.00015, "upstream_transport": 0.00010, "waste": 0.50}
     }
+
+# ============ AI 分析 API ============
+class AIAnalyzeBody(BaseModel):
+    project_info: dict = {}
+    emission_data: dict = {}
+    question: str = ""
+
+@app.post("/api/ai/analyze")
+async def ai_analyze(body: AIAnalyzeBody, user: dict = Depends(get_current_user)):
+    """AI 智能分析碳排放数据"""
+    if AI_CLIENT is None:
+        raise HTTPException(503, "AI 服务未配置，请设置 DEEPSEEK_API_KEY 环境变量")
+
+    project = body.project_info
+    emission = body.emission_data
+    question = body.question
+
+    context_parts = []
+    if project:
+        context_parts.append(
+            f"## 项目信息\n- 项目名称：{project.get('name', '未知')}\n"
+            f"- 企业：{project.get('company_name', '未知')}\n"
+            f"- 行业：{project.get('industry', '通用')}\n"
+            f"- 核算年度：{project.get('accounting_year', '未知')}\n"
+            f"- 核算标准：{project.get('standard', 'GHG')}\n"
+            f"- 电网区域：{project.get('grid_region', '全国平均')}\n"
+            f"- 营业收入：{project.get('revenue', 0)} 万元"
+        )
+
+    if emission:
+        total = emission.get('total', 0)
+        s1 = emission.get('scope1', 0)
+        s2 = emission.get('scope2', 0)
+        s3 = emission.get('scope3', 0)
+        s1_pct = (s1/total*100) if total > 0 else 0
+        s2_pct = (s2/total*100) if total > 0 else 0
+        s3_pct = (s3/total*100) if total > 0 else 0
+
+        context_parts.append(f"## 排放数据\n- 总排放量：{total:.2f} 吨CO2e")
+        context_parts.append(f"- Scope 1（直接排放）：{s1:.2f} 吨CO2e（{s1_pct:.1f}%）")
+        context_parts.append(f"- Scope 2（能源间接）：{s2:.2f} 吨CO2e（{s2_pct:.1f}%）")
+        context_parts.append(f"- Scope 3（其他间接）：{s3:.2f} 吨CO2e（{s3_pct:.1f}%）")
+
+        if emission.get('details'):
+            context_parts.append("\n## 排放明细")
+            for d in emission['details']:
+                if d.get('emission', 0) > 0.001:
+                    context_parts.append(
+                        f"- {d.get('name','')}（{d.get('scope','')}）："
+                        f"{d.get('value',0)} {d.get('unit','')} → "
+                        f"{d.get('emission',0):.4f} 吨CO2e（占比 {d.get('pct',0):.1f}%）"
+                    )
+
+        revenue = project.get('revenue', 0)
+        if revenue > 0:
+            intensity = total / revenue
+            context_parts.append(f"- 营收排放强度：{intensity:.4f} 吨CO2e/万元")
+
+    context = "\n".join(context_parts)
+
+    user_question = question if question else "请对以上碳排放数据进行全面分析，包括：排放结构评价、行业对标、异常检测、减排建议、合规提醒"
+
+    try:
+        response = AI_CLIENT.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"{context}\n\n{user_question}"}
+            ],
+            temperature=0.7,
+            max_tokens=2000,
+            stream=False
+        )
+        answer = response.choices[0].message.content
+        return {"ok": True, "analysis": answer}
+    except Exception as e:
+        raise HTTPException(500, f"AI 分析失败：{str(e)}")
+
+@app.post("/api/ai/chat")
+async def ai_chat(body: dict, user: dict = Depends(get_current_user)):
+    """AI 碳核算问答助手"""
+    if AI_CLIENT is None:
+        raise HTTPException(503, "AI 服务未配置")
+
+    messages = body.get("messages", [])
+    if not messages:
+        raise HTTPException(400, "消息不能为空")
+
+    if not messages or messages[0].get("role") != "system":
+        messages.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
+
+    try:
+        response = AI_CLIENT.chat.completions.create(
+            model="deepseek-chat",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2000,
+            stream=False
+        )
+        answer = response.choices[0].message.content
+        return {"ok": True, "reply": answer}
+    except Exception as e:
+        raise HTTPException(500, f"AI 问答失败：{str(e)}")
 
 # ============ 静态文件服务 ============
 @app.get("/")
