@@ -264,6 +264,32 @@ th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:
 .policy-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--bd);background:#fff;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .policy-chip:hover{border-color:var(--p);background:#eafaf1;color:var(--pd)}
 .policy-chip:active{background:var(--p);color:#fff}
+
+/* ===== 新手引导遮罩高亮系统 ===== */
+.tour-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;pointer-events:none}
+.tour-highlight-box{position:fixed;z-index:1000;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.55),0 0 20px rgba(39,174,96,0.4) inset;pointer-events:none;transition:all .35s ease}
+.tour-tip{position:fixed;z-index:1001;background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 8px 36px rgba(0,0,0,0.22);max-width:340px;font-size:13px;line-height:1.7;transition:opacity .3s}
+.tour-tip h4{font-size:15px;color:var(--pd);margin:0 0 6px}
+.tour-tip p{color:var(--t);margin:0 0 10px;font-size:12px;line-height:1.8}
+.tour-tip .tour-btns{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.tour-tip .tour-btns .tour-count{font-size:11px;color:var(--tl);margin-right:auto}
+.tour-tip .tour-btns button{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.tour-tip .tour-btns .btn-skip{background:transparent;color:var(--tl)}
+.tour-tip .tour-btns .btn-skip:hover{color:var(--r)}
+.tour-tip .tour-btns .btn-next{background:var(--p);color:#fff}
+.tour-tip .tour-btns .btn-next:hover{background:var(--pd)}
+.tour-tip::after{content:'';position:absolute;width:14px;height:14px;background:#fff;transform:rotate(45deg)}
+.tour-tip[data-arrow="bottom"]::after{bottom:-6px;left:50px}
+.tour-tip[data-arrow="top"]::after{top:-6px;left:50px}
+.tour-tip[data-arrow="left"]::after{left:-6px;top:30px}
+.tour-tip[data-arrow="right"]::after{right:-6px;top:30px}
+.help-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border:1.5px dashed var(--p);border-radius:8px;background:transparent;color:var(--pd);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.help-btn:hover{background:#eafaf1;border-style:solid}
+@media (max-width:768px){
+  .tour-tip{max-width:280px;padding:14px 16px;font-size:12px}
+  .tour-tip h4{font-size:13px}
+  .help-btn{padding:4px 8px;font-size:10px}
+}
 .policy-ask-row{display:flex;gap:8px;margin-bottom:12px}
 .policy-ask-row input{flex:1;padding:10px 14px;border:2px solid var(--bd);border-radius:10px;font-size:13px;font-family:inherit;outline:none}
 .policy-ask-row input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,.1)}
@@ -338,7 +364,7 @@ th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:
   <div class="uinf"><span>&#128104;&#8205;&#128187;</span><span id="sidebarUser">--</span><span class="lo" id="btnLogout">&#128682; 退出</span></div>
 </aside>
 <div class="main">
-  <div class="hdr"><h1 id="pageTitle">项目管理</h1><div style="display:flex;align-items:center;gap:12px"><span id="upStatus" style="font-size:11px;color:var(--tl)"></span><span id="currentProjectBadge" style="font-size:12px;color:var(--tl)">未选择项目</span></div></div>
+  <div class="hdr"><h1 id="pageTitle">项目管理</h1><div style="display:flex;align-items:center;gap:12px"><button class="help-btn" id="helpBtn" onclick="startTour()" title="新手教程">❓ 新手教程</button><span id="upStatus" style="font-size:11px;color:var(--tl)"></span><span id="currentProjectBadge" style="font-size:12px;color:var(--tl)">未选择项目</span></div></div>
   <div class="ctn" id="pageContent"></div>
 </div>
 </div>
@@ -553,6 +579,8 @@ async function showApp(){
     document.getElementById('loginPage').style.display='none';document.getElementById('appContainer').style.display='flex';
     document.getElementById('sidebarUser').textContent=currentUser.username;
     await loadProjects();updateHeader();renderPage();
+    // 每次登录自动弹出新手教程
+    setTimeout(function(){startTour();},700);
   }catch(e){showLoginPage();API.token='';sessionStorage.removeItem('esg_token');}
 }
 async function loadProjects(){
@@ -574,6 +602,7 @@ function nav(page){
   // 移动端关闭侧边栏
   document.querySelector('.sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('active');
+  if(tourState.active)endTour(); // 切换页面时结束当前引导
   renderPage();
 }
 function onPS(){var v=document.getElementById('projectSelect').value;currentProjectId=v?parseInt(v):null;updateHeader();renderPage();}
@@ -949,20 +978,127 @@ function renderPage(){
   switch(currentPage){case'project':renderProjectPage();break;case'data':renderDataEntryPage();break;case'result':renderResultPage();break;case'compare':renderComparePage();break;case'policy':renderPolicyPage();break;case'factor':renderFactorPage();break;case'audit':renderAuditPage();break;default:renderProjectPage();}
 }
 
-// ===== 新手教程 =====
-var tsStep=0;
-var TS=[
-  {title:'&#127793; 欢迎使用 ESG碳核算助手 4.0',content:'<b>v4.0 全新升级：</b><br><br>&#8226; <b>多用户系统</b>：注册账号，数据云端同步<br>&#8226; <b>政策自动更新</b>：启动时自动检测最新排放因子<br>&#8226; <b>行业模板</b>：一键创建项目并预填数据<br>&#8226; <b>同比对比</b>：多项目排放横向对比<br>&#8226; <b>审计日志</b>：全量操作记录，满足核查要求'},
-  {title:'&#128260; 政策自动更新（核心亮点）',content:'<b>v4.0 独有功能</b><br><br>启动时自动检测远程排放因子更新<br>发现新版本 &#8594; 红色徽章提示 &#8594; 弹窗详情 &#8594; 一键更新<br><br>左侧【政策更新】可手动检查、配置更新源、导入本地文件<br>每次更新都记录在更新历史中，审计可追溯'},
-  {title:'&#128203; 创建项目（行业智能匹配）',content:'左侧【项目管理】&#8594;【新建项目】<br>或使用【行业模板快速创建】一键生成<br><br>选择行业后自动推荐核算标准、电网区域、重点关注排放源<br>创建时自动预填该行业的典型排放数据'},
-  {title:'&#128221; 录入数据 + &#128202; 核算结果',content:'按 Scope 1 &#8594; 2 &#8594; 3 分步录入数据<br>每个字段有 ? 提示按钮<br><br>自动计算 &#8594; KPI卡片 + 饼图 + 柱状图 + 明细表<br>超1万吨自动黄色预警<br>一键导出 Excel（6张工作表）'},
-  {title:'&#128640; 开始使用',content:'教程结束！<br><br>建议操作路径：<br>1. 用行业模板快速创建项目<br>2. 到数据录入查看预填数据<br>3. 到核算结果查看图表<br>4. 试试同比对比和导出功能<br>5. 换个浏览器注册另一个账号测试多用户隔离'}
-];
-function showTutorial(step){
-  tsStep=step;var s=TS[step];var dots=TS.map(function(_,i){return'<span style="font-size:'+(i===step?'16px':'10px')+';color:'+(i===step?'var(--p)':'#ccc')+'">&#9679;</span>';}).join('');
-  showModal('<h3>'+s.title+'</h3><div style="min-height:160px;line-height:1.9;font-size:13px">'+s.content+'</div><div style="display:flex;justify-content:center;gap:10px;margin:18px 0">'+dots+'</div><div class="bgp" style="justify-content:space-between"><div>'+(step>0?'<button class="btn btn-o" onclick="showTutorial('+(step-1)+')">&#11013; 上一步</button>':'')+(step<TS.length-1?'<button class="btn btn-o" onclick="closeModal()">跳过教程</button>':'')+'</div>'+(step<TS.length-1?'<button class="btn btn-p" onclick="showTutorial('+(step+1)+')">下一步 &#10132;</button>':'<button class="btn btn-p" onclick="finishTutorial()">开始使用 &#128640;</button>')+'</div>');
+// ===== 交互式新手引导引擎 =====
+var tourSteps={
+  project:[
+    {sel:'.btn-p',title:'📂 新建项目',desc:'从这里创建一个碳核算项目，填写企业名称、行业、核算年度等信息即可开始。',pos:'bottom'},
+    {sel:'.btn-o',title:'📋 行业模板快速创建',desc:'不想手动填？选一个行业模板，一键生成带示例数据的项目，快速体验完整流程。',pos:'bottom'},
+    {sel:'#ptb',title:'📊 项目列表',desc:'这里显示你创建的所有项目。点击行选中，再用"打开选中"进入编辑。每个项目独立存储，数据隔离。',pos:'top'},
+  ],
+  data:[
+    {sel:'.steps',title:'📶 三步录入',desc:'排放数据按 Scope 1（直接排放）→ Scope 2（电力热力）→ Scope 3（价值链）分步录入。点击步骤标签切换。',pos:'bottom'},
+    {sel:'.de-row:first-child',title:'✏️ 填写活动数据',desc:'每个排放源一行，输入消耗量即可。鼠标悬停？图标查看字段说明。单位看清楚——有的是吨、有的是kWh。',pos:'bottom'},
+    {sel:'.btn-p',title:'💾 保存数据',desc:'填完后点保存，数据即时存入数据库。也可以点"下一步"自动保存并跳转。',pos:'top'},
+  ],
+  result:[
+    {sel:'.kc:first-child',title:'🎯 总排放量',desc:'这是你的碳排放总量（吨CO2e）。超过1万吨会出现黄色预警，提醒你关注碳交易履约义务。',pos:'bottom'},
+    {sel:'.cr',title:'📈 可视化图表',desc:'饼图看三个范围的排放占比，柱状图看各分类对比。一眼看出哪个环节排放最大。',pos:'top'},
+    {sel:'.ai-analyze-btn',title:'🤖 AI 智能分析',desc:'点击这里，DeepSeek AI 会读取你的数据，自动生成排放结构评价、减排建议和合规提醒。这是 v5.0 的核心功能。',pos:'top'},
+    {sel:'.btn-p:nth-child(2)',title:'📥 导出报告',desc:'一键导出 Excel 报告，含项目信息、数据、计算过程、汇总6张表，直接用于汇报或核查。',pos:'top'},
+  ],
+  policy:[
+    {sel:'.policy-ask-row',title:'💬 AI 政策顾问',desc:'在这里输入你想了解的双碳政策问题，AI 实时查询最新政策并给出专业解读。',pos:'bottom'},
+    {sel:'.policy-chips',title:'⚡ 快捷提问',desc:'点击这些标签快速提问常用话题：电网因子、碳交易、CBAM、CCER等。',pos:'bottom'},
+    {sel:'.factor-update-banner',title:'🔄 一键更新因子',desc:'如果 AI 发现官方排放因子有更新，这里会出现更新提示，点一下就能自动应用到所有计算。',pos:'top',optional:true},
+  ],
+  compare:[
+    {sel:'#cmpSel',title:'☑️ 选择对比项目',desc:'勾选需要对比的项目（至少2个），可以是不同年份或不同企业的。全选框帮你快速操作。',pos:'bottom'},
+    {sel:'.btn-p:first-child',title:'🔍 开始对比',desc:'选好后点这里，系统自动拉取每个项目的排放数据，生成堆叠柱状图和对比表格。',pos:'bottom'},
+  ],
+  factor:[
+    {sel:'.tw:first-child',title:'📖 排放因子速查',desc:'这里列出所有内置排放因子——电网、燃料、Scope 3，含数值、单位和官方来源。核算依据一目了然。',pos:'top'},
+    {sel:'table',title:'🔬 因子来源追溯',desc:'每个因子都标注了来源（生态环境部、GB/T标准、IPCC等），核查时可直接引用。',pos:'top'},
+  ],
+  audit:[
+    {sel:'.tw table',title:'📝 操作全记录',desc:'每一笔数据修改都记录在案：谁、什么时间、改了哪个字段、旧值→新值。满足ISO 14064核查追溯要求。',pos:'top'},
+  ]
+};
+
+var tourState={active:false,page:'',stepIdx:0,steps:[]};
+
+function buildTourEls(){
+  if(!document.getElementById('tourOverlay')){
+    var ov=document.createElement('div');ov.id='tourOverlay';ov.className='tour-overlay';
+    var hb=document.createElement('div');hb.id='tourHighlight';hb.className='tour-highlight-box';
+    var tp=document.createElement('div');tp.id='tourTip';tp.className='tour-tip';
+    document.body.appendChild(ov);document.body.appendChild(hb);document.body.appendChild(tp);
+  }
 }
-function finishTutorial(){localStorage.setItem('esg_tutorial_shown','1');closeModal();}
+
+function startTour(page){
+  page=page||currentPage;
+  var steps=tourSteps[page];
+  if(!steps||!steps.length){endTour();return;}
+  buildTourEls();
+  tourState.active=true;tourState.page=page;tourState.stepIdx=0;tourState.steps=steps;
+  document.getElementById('tourOverlay').style.display='block';
+  showTourStep(0);
+}
+
+function showTourStep(idx){
+  var steps=tourState.steps;
+  if(idx>=steps.length){endTour();return;}
+  tourState.stepIdx=idx;
+  var s=steps[idx];
+  // 如果是可选步骤且元素不存在，跳过
+  if(s.optional){
+    var el=document.querySelector(s.sel);
+    if(!el||el.offsetParent===null){tourState.stepIdx++;showTourStep(tourState.stepIdx);return;}
+  }
+
+  var highlight=document.getElementById('tourHighlight');
+  var tip=document.getElementById('tourTip');
+  var target=document.querySelector(s.sel);
+
+  if(!target){tourState.stepIdx++;showTourStep(tourState.stepIdx);return;}
+
+  // 定位高亮框
+  var r=target.getBoundingClientRect();
+  var pad=6;
+  highlight.style.display='block';
+  highlight.style.left=(r.left-pad)+'px';
+  highlight.style.top=(r.top-pad)+'px';
+  highlight.style.width=(r.width+pad*2)+'px';
+  highlight.style.height=(r.height+pad*2)+'px';
+
+  // 构建提示内容
+  var total=steps.length;
+  tip.innerHTML='<h4>'+s.title+'</h4><p>'+s.desc+'</p><div class="tour-btns"><span class="tour-count">'+(idx+1)+'/'+total+'</span><button class="btn-skip" onclick="endTour()">跳过</button>'+(idx>0?'<button class="btn-skip" onclick="showTourStep('+(idx-1)+')">← 上一步</button>':'')+'<button class="btn-next" onclick="showTourStep('+(idx+1)+')">'+(idx<total-1?'下一步 →':'完成 ✓')+'</button></div>';
+
+  // 定位提示气泡
+  tip.style.display='block';
+  tip.style.opacity='1';
+  var pos=s.pos||'bottom';
+  var tipW=tip.offsetWidth||320,tipH=tip.offsetHeight||140;
+  var left,top;
+  if(pos==='bottom'){
+    left=Math.max(10,Math.min(r.left+r.width/2-tipW/2,window.innerWidth-tipW-10));
+    top=r.bottom+12;
+  }else if(pos==='top'){
+    left=Math.max(10,Math.min(r.left+r.width/2-tipW/2,window.innerWidth-tipW-10));
+    top=r.top-tipH-12;
+  }else if(pos==='left'){
+    left=r.left-tipW-12;
+    top=Math.max(10,r.top+r.height/2-tipH/2);
+  }else{
+    left=r.right+12;
+    top=Math.max(10,r.top+r.height/2-tipH/2);
+  }
+  // 确保不超出屏幕
+  if(top<10)top=10;
+  if(top+tipH>window.innerHeight-10)top=window.innerHeight-tipH-10;
+  if(left<10)left=10;
+  tip.style.left=left+'px';tip.style.top=top+'px';
+  tip.setAttribute('data-arrow',pos);
+}
+
+function endTour(){
+  tourState.active=false;
+  var ov=document.getElementById('tourOverlay'),hb=document.getElementById('tourHighlight'),tp=document.getElementById('tourTip');
+  if(ov)ov.style.display='none';
+  if(hb)hb.style.display='none';
+  if(tp)tp.style.display='none';
+}
 
 // ===== 初始化 =====
 function init(){
@@ -976,8 +1112,8 @@ function init(){
   document.getElementById('projectSelect').addEventListener('change',onPS);
   API.token=sessionStorage.getItem('esg_token')||'';
   if(API.token){showApp();}else{refreshPS();}
-  // 首次使用显示教程
-  if(!localStorage.getItem('esg_tutorial_shown')){setTimeout(function(){showTutorial(0);},600);}
+  // 窗口缩放时重新定位引导
+  window.addEventListener('resize',function(){if(tourState.active)showTourStep(tourState.stepIdx);});
   // 自动检查政策更新
   if(localStorage.getItem('esg_auto_check')!=='0'){setTimeout(function(){checkUpdate(true);},3000);}
 }
