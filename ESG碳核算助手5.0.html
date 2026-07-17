@@ -981,25 +981,24 @@ function renderPage(){
 
 // ===== 全自动贯穿式新手引导 =====
 var FULL_TOUR = [
-  {page:'project',sel:'.snav',title:'📋 功能导航栏',desc:'左侧菜单覆盖7大功能：项目管理→数据录入→核算结果→同比对比→政策更新→排放因子库→审计日志。点击即可切换。',pos:'right'},
-  {page:'project',sel:'#projectSelect',title:'📌 项目选择器',desc:'切换当前项目。每个项目数据独立存储互不干扰。所有操作都基于当前选中的项目。',pos:'right'},
-  {page:'project',sel:'[onclick*="showCM"]',title:'➕ 新建项目',desc:'创建碳核算项目。填企业名称、行业、年度。选行业后系统自动推荐核算标准+电网区域+重点排放源。',pos:'bottom'},
-  {page:'project',sel:'[onclick*="showTM"]',title:'📋 行业模板快速创建',desc:'不想手动填？选行业模板，自动生成带示例数据的项目，快速体验完整碳核算流程。',pos:'bottom'},
-  {page:'project',sel:'#ptb',title:'📊 项目列表',desc:'所有项目都在这里。点击选中→打开选中→开始核算。每个项目可代表不同年份或不同企业。',pos:'top'},
-  {page:'data',sel:'.steps',title:'📶 三步排放录入',desc:'Scope 1 直接排放（燃煤/燃油）→ Scope 2 能源间接（外购电力/热力）→ Scope 3 其他间接（差旅/通勤/废弃物）。点标签切换。',pos:'bottom'},
-  {page:'data',sel:'.de-row',title:'✏️ 填写活动数据',desc:'每行一个排放源，输入消耗量。鼠标悬停？图标看说明。注意单位——吨、kWh、升各不相同。',pos:'bottom'},
-  {page:'data',sel:'[onclick*="sDFF"]',title:'💾 保存数据',desc:'填完点保存，数据即时入库。也可以点"查看核算结果"直接跳转看排放分析图表。',pos:'top'},
-  {page:'result',sel:'.kc',title:'🎯 碳排放总量+三大范围',desc:'核心KPI卡片。总量超过1万吨触发黄色预警提醒碳交易履约。Scope 1/2/3 占比一目了然。',pos:'bottom'},
-  {page:'result',sel:'.cr .cb',title:'📈 可视化图表',desc:'饼图看范围排放占比，柱状图对比各分类。一眼找到排放大户，指导减排优先级。',pos:'top'},
-  {page:'result',sel:'.ai-analyze-btn',title:'🤖 AI 智能分析（v5.0核心）',desc:'点击后 DeepSeek AI 读取排放数据，自动生成：结构评价、异常检测、3-5条减排建议、合规提醒。',pos:'top'},
-  {page:'result',sel:'[onclick*="doExport"]',title:'📥 导出Excel报告',desc:'一键导出6张工作表的专业报告（项目信息+活动数据+排放因子+计算过程+汇总+明细），可直接用于汇报或核查。',pos:'top'},
-  {page:'policy',sel:'.policy-ask-row',title:'🤖 AI 实时政策顾问',desc:'输入任何双碳政策问题（如"最新碳配额价格""电网因子有无更新"），AI 实时查询并给出专业解读。',pos:'bottom'},
-  {page:'policy',sel:'.policy-chips',title:'⚡ 一键快捷提问',desc:'点击标签快速查询：电网因子更新、碳交易动态、欧盟CBAM、CCER进展、本行业政策等。',pos:'bottom'},
-  {page:'compare',sel:'#cmpSel',title:'📊 多项目横向对比',desc:'勾选≥2个项目，自动拉取排放数据生成堆叠柱状图+对比表。适合不同年份/企业排放分析。',pos:'bottom'},
-  {page:'factor',sel:'h4:first-of-type',title:'📖 排放因子速查表',desc:'内置排放因子：电网7大区域、燃料5类、Scope 3四项，每个因子标注官方来源（生态环境部/GB/T/IPCC）。',pos:'top'},
-  {page:'audit',sel:'table',title:'📝 审计日志',desc:'ISO 14064核查合规基础。每一笔修改全记录：谁+何时+改了什么+旧值→新值，满足碳排放审计追溯。',pos:'top'},
-  {page:'',sel:'.ai-float-btn',title:'🧠 AI 问答助手',desc:'右下角浮动按钮随时打开AI对话。问任何ESG/碳核算问题，多轮对话。随时随地专业帮助。',pos:'left'},
-  {page:'',sel:'.help-btn',title:'🎉 教程完成！',desc:'随时点左侧菜单底部的 <b>🎓 新手教程</b> 重新学习。建议先用行业模板快速创建项目试试！',pos:'left'},
+  {page:'project',sel:'.snav',title:'📍 先认识功能导航',desc:'左侧7个模块是完整碳核算工作流：<b>创建项目→录入数据→查看结果→对比分析→追踪政策→查阅因子→审计追溯</b>。接下来按顺序带你走一遍。',pos:'right'},
+  {page:'project',sel:'[onclick*="showCM"]',title:'✋ 第一步：点击"新建项目"',desc:'<b>现在就点一下这个按钮试试</b>——会弹出创建窗口。填入企业名称、选择行业、核算年度，系统会自动匹配核算标准。',pos:'bottom'},
+  {page:'project',sel:'[onclick*="showTM"]',title:'💡 更快的方式：行业模板',desc:'不想手动填每个字段？<b>点这里选一个行业模板</b>，系统自动生成带示例数据的项目，30秒就能走完核算全流程。推荐先用这个体验！',pos:'bottom'},
+  {page:'project',sel:'#ptb',title:'📋 你的项目都会在这里',desc:'创建好的项目出现在列表中。<b>点击选中一个项目</b>，然后点"打开选中"进入下一步数据录入。',pos:'top'},
+  {page:'data',sel:'.steps',title:'📶 按三个范围录入数据',desc:'切换到数据录入页面。<b>现在点击 Scope 2 标签</b>试试——排放数据按直接排放→能源间接→其他间接分步填写，防止遗漏。',pos:'bottom'},
+  {page:'data',sel:'.de-row',title:'✏️ 在输入框填入消耗量',desc:'<b>随便找一个输入框填个数字试试</b>（比如外购电力填 10000）。鼠标悬停在？图标上会显示这个字段的填写说明。填完可以删掉，只是体验一下。',pos:'bottom'},
+  {page:'data',sel:'[onclick*="sDFF"]',title:'💾 填完点保存',desc:'数据填好后<b>点击这个保存按钮</b>，所有输入即时存入数据库。然后点"查看核算结果"进入下一步。',pos:'top'},
+  {page:'result',sel:'.kc',title:'👀 查看你的排放数据',desc:'系统自动计算并展示总排放量和 Scope 1/2/3 分项。看看哪个范围占比最大？超过1万吨还会有黄色预警。',pos:'bottom'},
+  {page:'result',sel:'.cr .cb',title:'📈 理解图表',desc:'饼图告诉你排放来源分布，柱状图对比各分类。找到占比最大的那个——它就是你的减排重点。',pos:'top'},
+  {page:'result',sel:'.ai-analyze-btn',title:'🤖 重点：试试AI分析',desc:'<b>这是v5.0核心功能。点击这个按钮</b>，DeepSeek AI 会读取你的排放数据，给你一份专业分析报告。建议等有了真实数据再点，效果更好。',pos:'top'},
+  {page:'result',sel:'[onclick*="doExport"]',title:'📥 导出报告',desc:'需要汇报或核查时<b>点这里一键导出Excel</b>，含6张工作表——从原始数据到计算过程到汇总结论全部打包。',pos:'top'},
+  {page:'policy',sel:'.policy-ask-row',title:'🔍 试试AI政策查询',desc:'<b>在输入框里打字试试</b>——比如问"最新的碳交易价格是多少"。AI实时查询最新政策并给出解读。这是取代手动查资料的核心升级。',pos:'bottom'},
+  {page:'policy',sel:'.policy-chips',title:'⚡ 或者直接点快捷标签',desc:'懒得打字？<b>点一个标签试试</b>——电网因子更新、CBAM影响、CCER进展，选你关心的。',pos:'bottom'},
+  {page:'compare',sel:'#cmpSel',title:'📊 对比不同项目',desc:'<b>勾选至少2个项目</b>（需要有数据），然后点"开始对比"。不同年份的排放变化、不同企业的排放差异，一张图看清楚。',pos:'bottom'},
+  {page:'factor',sel:'h4:first-of-type',title:'📖 查排放因子',desc:'核算结果怎么算出来的？<b>往下翻翻这张表</b>——电网7个区域、5种燃料、4类Scope 3，每个换算系数都标注了官方来源。',pos:'top'},
+  {page:'audit',sel:'table',title:'📝 了解审计追溯',desc:'ISO核查必备。<b>看看这张表</b>——你做的每一步数据修改都记录在这里：谁、什么时间、改了哪、改之前是多少、改之后是多少。',pos:'top'},
+  {page:'',sel:'.ai-float-btn',title:'🧠 别忘了AI助手',desc:'右下角这个紫色按钮随时可用。<b>点开试试</b>，问任何ESG问题。现在就可以去问一句"制造业如何降低Scope 2排放"。',pos:'left'},
+  {page:'',sel:'.help-btn',title:'🎉 教程结束，开始实操！',desc:'最佳上手路径：<b>行业模板创建项目→查看自动生成的结果→点AI分析</b>，全程不到1分钟。教程可随时点左侧 <b>🎓 新手教程</b> 重新看。',pos:'left'},
 ];
 
 var fullTour={active:false,idx:0,timer:null,retry:0};
@@ -1090,8 +1089,7 @@ function showFullTourTip(idx,target){
     tip.style.left=left+'px';tip.style.top=top+'px';
     tip.setAttribute('data-arrow',pos);
 
-    clearTimeout(fullTour.timer);
-    fullTour.timer=setTimeout(function(){fullTourNext();},isLast?8000:4500);
+    // 不自动前进，用户手动点"下一步"
   },150);
 }
 
