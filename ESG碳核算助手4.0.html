@@ -259,6 +259,32 @@ th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:
 .ai-result strong{color:#5b2c9d}
 .ai-result code{background:#f0edff;padding:1px 5px;border-radius:3px;font-size:12px}
 
+/* ===== 政策 AI 页 ===== */
+.policy-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.policy-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--bd);background:#fff;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.policy-chip:hover{border-color:var(--p);background:#eafaf1;color:var(--pd)}
+.policy-chip:active{background:var(--p);color:#fff}
+.policy-ask-row{display:flex;gap:8px;margin-bottom:12px}
+.policy-ask-row input{flex:1;padding:10px 14px;border:2px solid var(--bd);border-radius:10px;font-size:13px;font-family:inherit;outline:none}
+.policy-ask-row input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,.1)}
+.policy-ask-row button{padding:10px 18px;background:var(--p);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.policy-ask-row button:hover{background:var(--pd)}
+.policy-answer{background:#fafdfb;border:1px solid #d4e9dc;border-radius:12px;padding:16px;line-height:1.9;font-size:13px;display:none;margin-bottom:14px}
+.policy-answer.show{display:block}
+.policy-answer h1,.policy-answer h2,.policy-answer h3{color:var(--pd);font-size:15px;margin:10px 0 6px}
+.policy-answer h1:first-child,.policy-answer h2:first-child,.policy-answer h3:first-child{margin-top:0}
+.policy-answer ul,.policy-answer ol{padding-left:20px;margin:6px 0}
+.policy-answer li{margin-bottom:4px}
+.policy-answer strong{color:#145a32}
+.policy-answer code{background:#eafaf1;padding:1px 5px;border-radius:3px}
+.policy-answer table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.policy-answer th,.policy-answer td{border:1px solid var(--bd);padding:6px 10px;text-align:left}
+.policy-answer th{background:var(--bg)}
+.factor-update-banner{background:#fffbe6;border:2px dashed #f39c12;border-radius:10px;padding:12px 16px;margin-top:12px;display:none}
+.factor-update-banner.show{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.factor-update-banner .info{font-size:12px;color:#7d6608}
+.factor-update-banner .info b{color:#d68910}
+
 /* 移动端 AI 面板 */
 @media (max-width:768px){
   .ai-panel{width:calc(100vw - 20px);right:10px;bottom:80px;max-height:65vh}
@@ -717,22 +743,87 @@ function loadCmpChart(results){
   document.head.appendChild(s);
 }
 
-// ===== 政策更新页 =====
+// ===== 政策更新页（AI驱动）=====
+var policyFactorPending=null;
+
 function renderPolicyPage(){
-  var h='<div class="card"><div class="ctt">&#128260; 政策与排放因子更新</div><div class="alert alert-s">&#128161; <b>v4.0 核心功能：</b>启动时自动检测远程排放因子更新。更新源：生态环境部、IPCC、GB/T 32150 等官方发布渠道。发现新版本时自动弹窗提醒，一键更新应用到所有计算。</div><div class="bgp" style="margin:14px 0"><button class="btn btn-p" onclick="checkUpdate(false)">&#128269; 手动检查更新</button><button class="btn btn-o" onclick="showUpCfg()">&#9881; 配置更新源</button><button class="btn btn-o" onclick="impLocal()">&#128193; 导入本地更新文件</button></div><p style="font-size:11px;color:var(--tl)">当前更新源：'+(localStorage.getItem('esg_update_url')||UPDATE_URL)+'</p><p style="font-size:11px;color:var(--tl);margin-top:4px">上次检查：'+(localStorage.getItem('esg_last_check')?new Date(localStorage.getItem('esg_last_check')).toLocaleString():'尚未检查')+'</p></div><div class="card"><div class="ctt">&#128214; 更新历史（最近50条）</div><div class="tw"><table><thead><tr><th>版本</th><th>时间</th><th>说明</th><th>因子数</th><th>来源</th></tr></thead><tbody id="upHistBody"></tbody></table></div></div>';
+  var ind=(projects.find(function(x){return x.id===currentProjectId;})||{}).industry||'通用';
+  var chips=[
+    {label:'📋 最新碳排放政策',q:'2025-2026年最新的碳排放和双碳政策有哪些重要变化？'},
+    {label:'🏭 碳交易市场动态',q:'全国碳交易市场最新动态是什么？配额价格和扩容情况如何？'},
+    {label:'⚡ 电网排放因子更新',q:'最新的中国电网排放因子是多少？与系统内置值有无差异？如有差异请对比并建议更新。'},
+    {label:'🇪🇺 欧盟CBAM影响',q:'欧盟CBAM碳边境调节机制最新进展，对中国出口企业有什么影响？'},
+    {label:'🌱 CCER最新进展',q:'CCER（国家核证自愿减排量）重启后的最新政策和交易情况？'},
+    {label:'🏗️ 我们行业政策',q:ind+'行业最新的碳达峰实施方案和碳核算要求是什么？'}
+  ];
+  var h='<div class="card"><div class="ctt">🤖 AI 实时政策顾问 <span style="font-size:10px;color:var(--tl);font-weight:400;margin-left:8px">由 DeepSeek 驱动</span></div>';
+  h+='<p style="font-size:12px;color:var(--tl);margin-bottom:12px">AI 实时追踪最新双碳政策、排放因子变化、碳交易动态。点击快捷问题或输入你想了解的内容：</p>';
+  h+='<div class="policy-chips">';
+  chips.forEach(function(c,i){
+    h+='<span class="policy-chip" onclick="askPolicy(\''+esc(c.q).replace(/'/g,"\\'")+'\')">'+c.label+'</span>';
+  });
+  h+='</div>';
+  h+='<div class="policy-ask-row"><input id="policyInput" placeholder="输入你想了解的政策问题..." onkeydown="if(event.key===\'Enter\')askPolicy()"><button onclick="askPolicy()">🔍 查询</button></div>';
+  h+='<div class="policy-answer" id="policyAnswer"></div>';
+  h+='<div class="factor-update-banner" id="factorUpdateBanner"><span class="info">📊 AI 建议更新排放因子</span><button class="btn btn-p btn-sm" onclick="applyPolicyFactor()">✅ 一键应用</button></div>';
+  h+='</div>';
+  h+='<div class="card"><div class="ctt">📄 更新历史 <span style="font-size:10px;color:var(--tl);font-weight:400;margin-left:8px">最近50条</span></div><div style="margin-bottom:10px"><button class="btn btn-o btn-sm" onclick="impLocal()">📁 导入本地更新文件</button></div><div class="tw"><table><thead><tr><th>版本</th><th>时间</th><th>说明</th><th>因子数</th><th>来源</th></tr></thead><tbody id="upHistBody"></tbody></table></div></div>';
   document.getElementById('pageContent').innerHTML=h;
   var tb=document.getElementById('upHistBody');
-  if(updateHistory.length===0){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--tl)">暂无更新记录，点击"手动检查更新"获取最新排放因子</td></tr>';}
+  if(updateHistory.length===0){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--tl)">暂无更新记录，使用上方 AI 顾问查询最新政策或导入本地文件</td></tr>';}
   else{tb.innerHTML=updateHistory.map(function(h){return'<tr><td><b>'+h.version+'</b></td><td>'+(h.time||'').substring(0,19)+'</td><td>'+esc(h.description||'')+'</td><td>'+(h.factorCount||0)+'条</td><td>'+(h.source||'remote')+'</td></tr>';}).join('');}
 }
-function showUpCfg(){
-  showModal('<h3>&#9881; 配置更新源</h3><div class="fg"><label>远程更新URL</label><input id="upUrl" value="'+(localStorage.getItem('esg_update_url')||UPDATE_URL)+'" placeholder="输入JSON更新源URL"></div><div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="autoChk"'+(localStorage.getItem('esg_auto_check')!=='0'?' checked':'')+'> 启动时自动检查更新</label></div><div class="bgp" style="justify-content:flex-end;margin-top:14px"><button class="btn btn-o" onclick="closeModal()">取消</button><button class="btn btn-p" onclick="saveUpCfg()">&#128190; 保存配置</button></div>');
+
+async function askPolicy(question){
+  var q=question||document.getElementById('policyInput').value.trim();
+  if(!q){showToast('请输入问题');return;}
+  var box=document.getElementById('policyAnswer');
+  var banner=document.getElementById('factorUpdateBanner');
+  box.innerHTML='<div class="typing"><span></span><span></span><span></span> AI 正在查询最新政策...</div>';
+  box.classList.add('show');
+  if(banner)banner.classList.remove('show');
+  policyFactorPending=null;
+  try{
+    var res=await API.post('/api/ai/policy',{query:q});
+    var reply=res.reply||'暂无回复';
+    var html=reply
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/```factor_update[\s\S]*?```/g,'')
+      .replace(/###\s+(.*?)(?:\n|$)/g,'<h3>$1</h3>')
+      .replace(/##\s+(.*?)(?:\n|$)/g,'<h2>$1</h2>')
+      .replace(/#\s+(.*?)(?:\n|$)/g,'<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/- (.*?)(?:\n|$)/g,'<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/g,'<ul>$1</ul>')
+      .replace(/<\/ul>\s*<ul>/g,'')
+      .replace(/\n/g,'<br>');
+    box.innerHTML=html;
+    if(res.factor_update){
+      policyFactorPending=res.factor_update;
+      var v=policyFactorPending.version||'未知';
+      var d=policyFactorPending.description||'AI 推荐更新排放因子';
+      banner.querySelector('.info').innerHTML='📊 <b>'+v+'</b>: '+esc(d);
+      banner.classList.add('show');
+    }
+  }catch(e){
+    box.innerHTML='<span style="color:var(--r)">⚠ '+esc(e.message)+'</span>';
+  }
 }
-function saveUpCfg(){
-  localStorage.setItem('esg_update_url',document.getElementById('upUrl').value.trim());
-  localStorage.setItem('esg_auto_check',document.getElementById('autoChk').checked?'1':'0');
-  closeModal();showToast('配置已保存');
+
+function applyPolicyFactor(){
+  if(!policyFactorPending)return;
+  var data=policyFactorPending;
+  if(data.gridFactors)Object.assign(EGF,data.gridFactors);
+  if(data.fuelFactors)Object.assign(FFT,data.fuelFactors);
+  if(data.scope3Factors)Object.assign(S3F,data.scope3Factors);
+  updateHistory.unshift({version:data.version||'AI-update',description:data.description||'AI推荐更新',factorCount:Object.keys(data.gridFactors||{}).length+Object.keys(data.fuelFactors||{}).length+Object.keys(data.scope3Factors||{}).length,time:new Date().toISOString(),source:'AI推荐'});
+  if(updateHistory.length>50)updateHistory=updateHistory.slice(0,50);
+  saveUpdateHistory();
+  document.getElementById('factorUpdateBanner').classList.remove('show');
+  policyFactorPending=null;
+  showToast('✅ 排放因子已更新！');renderPage();
 }
+
 function impLocal(){
   var inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){try{var data=JSON.parse(ev.target.result);applyUpdate(data);if(currentPage==='policy')renderPage();}catch(err){showToast('文件解析失败：'+err.message);}};r.readAsText(f);};
