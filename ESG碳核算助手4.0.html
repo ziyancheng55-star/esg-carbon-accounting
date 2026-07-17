@@ -77,7 +77,7 @@ body{font-family:"Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t
 table{width:100%;border-collapse:collapse;font-size:12px}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--bd)}
 th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:hover{background:#f8faf9}
-.tw{max-height:380px;overflow-y:auto;border:1px solid var(--bd);border-radius:8px}
+.tw{max-height:380px;overflow-y:auto;overflow-x:auto;border:1px solid var(--bd);border-radius:8px;-webkit-overflow-scrolling:touch}
 .sg{border:1px solid var(--bd);border-radius:12px;margin-bottom:14px;overflow:hidden}
 .sg .sh{padding:12px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px}
 .sg .sh.h1{background:#fdecea;color:#e74c3c}.sg .sh.h2{background:#fef5e7;color:#d68910}.sg .sh.h3{background:#eaf2f8;color:#3498db}
@@ -110,6 +110,111 @@ th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:
 @keyframes pls{0%,100%{opacity:1}50%{opacity:0.5}}
 .tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
 .tag-new{background:#e74c3c;color:#fff}.tag-up{background:#f39c12;color:#fff}.tag-ok{background:var(--p);color:#fff}
+
+/* ===== 汉堡菜单（仅移动端显示） ===== */
+.hamburger{display:none;position:fixed;top:8px;left:8px;z-index:200;background:var(--p);color:#fff;border:none;width:38px;height:38px;border-radius:10px;font-size:22px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.3);line-height:1}
+.sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:99}
+
+/* ===== 数据录入行（替代内联style，便于响应式） ===== */
+.de-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.de-label{width:150px;flex-shrink:0;margin-bottom:0;font-size:12px;font-weight:600;color:var(--t)}
+.de-input{width:170px;padding:9px 11px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;transition:border .2s}
+.de-input:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,.1)}
+.de-input.err{border-color:var(--r);background:#fdf2f2}
+.de-desc{font-size:10px;color:var(--tl)}
+
+/* ==============================
+   移动端适配 (≤768px)
+   ============================== */
+@media (max-width:768px){
+  /* 汉堡菜单 */
+  .hamburger{display:flex}
+
+  /* 侧边栏 → 左侧滑出抽屉 */
+  .sidebar{width:230px;position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);transition:transform .25s;z-index:100;overflow-y:auto}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.active{display:block}
+
+  /* 侧边栏头部简化 */
+  .shd{padding:14px 12px}
+  .shd h2{font-size:13px}
+  .psw{padding:8px 10px}
+  .uinf{padding:8px 10px;font-size:10px}
+
+  /* 主内容区 */
+  .main{margin-left:0!important}
+  .ctn{padding:12px 8px}
+  .hdr{flex-direction:column;padding:10px 14px 10px 52px;gap:4px;align-items:flex-start}
+  .hdr h1{font-size:16px}
+
+  /* KPI卡片 */
+  .kr{flex-direction:column;gap:8px}
+  .kc{min-width:auto!important;padding:14px}
+  .kc .kv{font-size:22px}
+
+  /* 图表容器 */
+  .cr{flex-direction:column;gap:8px}
+  .cb{min-width:auto!important}
+
+  /* 表单行 */
+  .fr{flex-direction:column;gap:8px}
+
+  /* 数据录入行 */
+  .de-row{flex-wrap:wrap;gap:6px}
+  .de-label{width:100%!important}
+  .de-input{width:100%!important;max-width:100%}
+  .de-desc{display:none}
+
+  /* 登录卡片 */
+  .lp{padding:20px}
+  .lc{width:92%;padding:24px 18px;border-radius:14px}
+  .lc h1{font-size:20px}
+
+  /* 弹窗 */
+  .modal{width:95%;padding:16px;max-height:88vh}
+  .modal h3{font-size:15px}
+
+  /* 步骤条 */
+  .steps{flex-wrap:wrap}
+  .step{flex:1 1 auto;font-size:10px;padding:8px 4px;min-width:65px}
+  .step .sn{width:18px;height:18px;line-height:18px;font-size:10px;margin-right:2px}
+
+  /* Toast */
+  #toast{left:10px!important;right:10px!important;bottom:16px!important;font-size:12px;text-align:center}
+
+  /* 按钮组 */
+  .bgp{gap:6px}
+
+  /* 对比选择标签 */
+  #cmpSel{flex-direction:column;gap:4px}
+  #cmpSel label{width:100%}
+
+  /* 匹配提示卡片 */
+  .match-card{padding:10px}
+  .match-card h4{font-size:12px}
+
+  /* 卡片标题 */
+  .card .ctt{font-size:14px}
+
+  /* 行业模板卡 */
+  .tplc{padding:12px}
+  .tplc h4{font-size:12px}
+
+  /* 表格增强滚动 */
+  .tw{max-height:260px;overflow-x:auto}
+  .tw table{min-width:580px;font-size:11px}
+  th,td{padding:7px 6px}
+
+  /* 项目列表表格 */
+  #ptb td,#ptb th{font-size:11px}
+
+  /* 审计日志表格 */
+  .card .tw{max-height:240px}
+
+  /* 教程弹窗 */
+  .modal .bgp{flex-direction:row!important}
+  .modal .bgp .btn{width:auto}
+}
 </style>
 </head>
 <body>
@@ -138,6 +243,8 @@ th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:
 </div>
 
 <div class="ac" id="appContainer">
+<button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">&#9776;</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar">
   <div class="shd"><h2><span>&#127793;</span> ESG碳核算助手</h2><div class="ver">v4.0 &#183; 多用户版 &#183; 实时更新</div></div>
   <nav class="snav">
@@ -353,10 +460,19 @@ async function loadProjects(){
 }
 
 // ===== 导航 =====
+function toggleSidebar(){
+  var sb=document.querySelector('.sidebar');
+  var ov=document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('active');
+}
 function nav(page){
   currentPage=page;
   document.querySelectorAll('.ni').forEach(function(el){el.classList.remove('acv');});
   var el=document.querySelector('.ni[data-page="'+page+'"]');if(el)el.classList.add('acv');
+  // 移动端关闭侧边栏
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
   renderPage();
 }
 function onPS(){var v=document.getElementById('projectSelect').value;currentProjectId=v?parseInt(v):null;updateHeader();renderPage();}
@@ -434,7 +550,7 @@ async function renderDataEntryPage(){
   h+='<div class="sg"><div class="sh '+info.cls+'">'+info.title+' <span style="font-weight:400;font-size:11px;margin-left:8px">-- '+info.desc+'</span></div><div class="sb">';
   for(var i=0;i<ss.length;i++){
     var src=ss[i],val=currentActivityData[src.key]!==undefined?currentActivityData[src.key]:'';
-    h+='<div class="fg" style="display:flex;align-items:center;gap:10px"><label style="width:150px;flex-shrink:0;margin-bottom:0">'+src.name+'（'+src.unit+'）<span class="tip">?<span class="tt">'+src.desc+'</span></span></label><input type="text" id="input_'+src.key+'" value="'+val+'" style="width:170px" oninput="vn(this)" placeholder="请输入数值"><span style="font-size:10px;color:var(--tl)">'+src.desc+'</span></div>';
+    h+='<div class="de-row"><label class="de-label">'+src.name+'（'+src.unit+'）<span class="tip">?<span class="tt">'+src.desc+'</span></span></label><input type="text" class="de-input" id="input_'+src.key+'" value="'+val+'" oninput="vn(this)" placeholder="请输入数值"><span class="de-desc">'+src.desc+'</span></div>';
   }
   h+='</div></div>';
   h+='<div class="bgp" style="justify-content:space-between"><div>'+(currentStep!=='scope1'?'<button class="btn btn-o" onclick="currentStep=\''+(currentStep==='scope2'?'scope1':'scope2')+'\';renderPage()">&#11013; 上一步</button>':'')+'</div><div><button class="btn btn-p" onclick="sDFF()">&#128190; 保存数据</button>'+(currentStep!=='scope3'?'<button class="btn btn-b" onclick="sDFF();currentStep=\''+(currentStep==='scope1'?'scope2':'scope3')+'\';renderPage()">下一步 &#10132;</button>':'')+'<button class="btn btn-b" onclick="sDFF();nav(\'result\')" style="margin-left:6px">&#128202; 查看核算结果</button></div></div>';
