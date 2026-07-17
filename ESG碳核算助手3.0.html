@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESG碳核算助手 3.0 — 实时政策更新版</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#27ae60;--primary-dark:#1e8449;--danger:#e74c3c;--warning:#f39c12;--info:#3498db;--sidebar-bg:#1a252f;--sidebar-width:200px;--bg:#f0f4f3;--card-bg:#fff;--text:#2c3e50;--text-light:#7f8c8d;--border:#dce4e2;--scope1:#e74c3c;--scope2:#f39c12;--scope3:#3498db}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-width);background:var(--sidebar-bg);color:#ecf0f1;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sidebar-header{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.sidebar-header h2{font-size:15px;font-weight:700;color:#fff}
+.sidebar-header .ver{font-size:10px;color:#2ecc71;margin-top:3px}
+.sidebar-nav{flex:1;padding:4px 0}
+.nav-item{display:flex;align-items:center;gap:8px;padding:10px 18px;cursor:pointer;color:#bdc3c7;transition:all 0.15s;border-left:3px solid transparent;font-size:13px}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:#fff}
+.nav-item.active{background:rgba(39,174,96,0.2);color:#2ecc71;border-left-color:#2ecc71}
+.nav-item .icon{font-size:16px;width:22px;text-align:center}
+.nav-item .badge{background:#e74c3c;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:auto}
+.project-switch{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.1)}
+.project-switch select{width:100%;padding:7px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#2c3e50;color:#ecf0f1;font-size:11px}
+.main{margin-left:var(--sidebar-width);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.header{background:var(--card-bg);padding:14px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:19px;font-weight:700;color:var(--primary-dark)}
+.content{flex:1;padding:20px 28px;overflow-y:auto}
+.card{background:var(--card-bg);border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);padding-bottom:10px;border-bottom:2px solid var(--border)}
+.kpi-row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.kpi-card{flex:1;min-width:160px;background:var(--card-bg);border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:4px solid var(--primary);display:flex;flex-direction:column;gap:4px}
+.kpi-card.scope1{border-left-color:var(--scope1)}.kpi-card.scope2{border-left-color:var(--scope2)}.kpi-card.scope3{border-left-color:var(--scope3)}
+.kpi-card .kpi-label{font-size:11px;color:var(--text-light);letter-spacing:0.5px}
+.kpi-card .kpi-value{font-size:26px;font-weight:700;color:var(--text)}
+.kpi-card .kpi-unit{font-size:11px;color:var(--text-light)}
+.chart-row{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.chart-box{flex:1;min-width:340px;background:var(--card-bg);border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.chart-box .chart-title{font-size:13px;font-weight:700;margin-bottom:10px}
+.chart-box canvas{max-height:280px}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:3px;color:var(--text)}
+.form-group input,.form-group select{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;transition:border-color 0.2s;font-family:inherit}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(39,174,96,0.1)}
+.form-group input.error{border-color:var(--danger);background:#fdf2f2}
+.form-row{display:flex;gap:14px}.form-row .form-group{flex:1}
+.btn{padding:9px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-danger{background:var(--danger);color:#fff}.btn-info{background:var(--info);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{background:var(--bg)}
+.btn-sm{padding:5px 10px;font-size:11px}.btn-group{display:flex;gap:7px;flex-wrap:wrap}
+.steps{display:flex;margin-bottom:16px}
+.step{flex:1;text-align:center;padding:10px 14px;background:var(--bg);border-bottom:3px solid var(--border);font-size:12px;font-weight:600;color:var(--text-light);cursor:pointer;transition:all 0.2s}
+.step.active{border-bottom-color:var(--primary);color:var(--primary);background:#eafaf1}
+.step .step-num{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--border);color:#fff;margin-right:5px;font-size:11px}
+.step.active .step-num{background:var(--primary)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--bg);font-weight:700;color:var(--text);position:sticky;top:0}
+tr:hover{background:#f8faf9}
+.table-wrap{max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px}
+.scope-group{border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.scope-group .scope-header{padding:12px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px}
+.scope-group .scope-header.scope1-h{background:#fdecea;color:var(--scope1)}
+.scope-group .scope-header.scope2-h{background:#fef5e7;color:#d68910}
+.scope-group .scope-header.scope3-h{background:#eaf2f8;color:var(--scope3)}
+.scope-group .scope-body{padding:10px 14px}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:7px}
+.alert-warning{background:#fef9e7;border:1px solid #f9e79f;color:#7d6608}
+.alert-danger{background:#fdedec;border:1px solid #f5b7b1;color:#922b21}
+.alert-info{background:#eaf2f8;border:1px solid #aed6f1;color:#1a5276}
+.alert-success{background:#eafaf1;border:1px solid #a9dfbf;color:#145a32}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card-bg);border-radius:16px;padding:28px;max-width:580px;width:90%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.modal h3{font-size:17px;margin-bottom:18px;color:var(--primary-dark)}
+.tooltip{position:relative;display:inline-block;cursor:help;color:var(--info);font-weight:700;margin-left:3px}
+.tooltip .tooltip-text{visibility:hidden;width:260px;background:#2c3e50;color:#fff;text-align:left;border-radius:8px;padding:10px 12px;position:fixed;z-index:9999;font-size:11px;font-weight:400;line-height:1.5;opacity:0;transition:opacity 0.15s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.tooltip:hover .tooltip-text{visibility:visible;opacity:1}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-light)}
+.empty-state .empty-icon{font-size:56px;margin-bottom:14px}
+.empty-state h3{font-size:17px;margin-bottom:7px;color:var(--text)}
+.match-card{border:2px dashed var(--primary);background:#eafaf1;border-radius:12px;padding:14px;margin-bottom:14px}
+.match-card h4{color:var(--primary-dark);margin-bottom:6px;font-size:13px}
+.match-tag{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;margin:3px}
+.match-tag.recommend{background:var(--primary);color:#fff}
+.match-tag.focus{background:#fef9e7;color:#7d6608;border:1px solid #f9e79f}
+.formula-toggle{cursor:pointer;color:var(--info);font-size:11px;text-decoration:underline}
+.formula-detail{display:none;font-size:11px;color:var(--text-light);margin-top:3px;padding:5px 9px;background:var(--bg);border-radius:6px;font-family:monospace}
+.formula-detail.show{display:block}
+.update-badge{display:inline-block;background:#e74c3c;color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.template-card{border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s}
+.template-card:hover{border-color:var(--primary);background:#eafaf1;transform:translateY(-2px)}
+.template-card h4{font-size:13px;margin-bottom:5px}
+.template-card p{font-size:11px;color:var(--text-light)}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.tag-new{background:#e74c3c;color:#fff}.tag-updated{background:#f39c12;color:#fff}.tag-active{background:var(--primary);color:#fff}
+@media(max-width:768px){.sidebar{width:55px}.sidebar .nav-item span,.sidebar-header h2,.sidebar-header .ver{display:none}.sidebar .nav-item{justify-content:center;padding:10px 0}.main{margin-left:55px}.content{padding:14px}.kpi-row,.chart-row,.form-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>🌱 ESG碳核算助手</h2>
+    <div class="ver">v3.0 · 实时政策更新</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="project"><span class="icon">📋</span><span>项目管理</span></div>
+    <div class="nav-item" data-page="data"><span class="icon">📝</span><span>数据录入</span></div>
+    <div class="nav-item" data-page="result"><span class="icon">📊</span><span>核算结果</span></div>
+    <div class="nav-item" data-page="compare"><span class="icon">📈</span><span>同比对比</span></div>
+    <div class="nav-item" data-page="factor"><span class="icon">🔬</span><span>排放因子库</span></div>
+    <div class="nav-item" data-page="policy"><span class="icon">🔄</span><span>政策更新</span><span class="badge" id="updateBadge" style="display:none">新</span></div>
+    <div class="nav-item" data-page="audit"><span class="icon">📜</span><span>审计日志</span></div>
+  </nav>
+  <div class="project-switch">
+    <select id="projectSelect" onchange="onProjectSwitch()"><option value="">📌 选择当前项目...</option></select>
+  </div>
+</aside>
+<div class="main">
+  <div class="header">
+    <h1 id="pageTitle">项目管理</h1>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="updateStatus" style="font-size:11px;color:var(--text-light)"></span>
+      <span id="currentProjectBadge" style="font-size:12px;color:var(--text-light)">未选择项目</span>
+    </div>
+  </div>
+  <div class="content" id="pageContent"></div>
+</div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBox"></div></div>
+
+<script>
+// =============================================
+// 数据层
+// =============================================
+const LS_KEY = 'esg_carbon_3_0';
+const UPDATE_URL = 'https://gist.githubusercontent.com/anonymous/esg-factors/raw/main/factors_v3.json';
+
+function loadStore(){
+  try{const r=localStorage.getItem(LS_KEY);return r?JSON.parse(r):defaultStore()}catch(e){return defaultStore()}
+}
+function defaultStore(){
+  return{
+    projects:[],activityData:{},auditLogs:[],snapshots:{},
+    updateHistory:[],factorVersions:[],
+    settings:{tutorialShown:false,lastProjectId:null,autoCheckUpdate:true,updateUrl:UPDATE_URL,lastCheckTime:null}
+  }
+}
+function saveStore(s){localStorage.setItem(LS_KEY,JSON.stringify(s))}
+let STORE=loadStore();
+
+function addLog(pid,action,entity,key,oldV,newV){
+  STORE.auditLogs.push({projectId:pid,action,entity,key,oldVal:String(oldV||''),newVal:String(newV||''),time:new Date().toISOString()});
+  if(STORE.auditLogs.length>500)STORE.auditLogs=STORE.auditLogs.slice(-500);
+  saveStore(STORE)
+}
+
+// =============================================
+// 排放因子库
+// =============================================
+const FUEL_DENSITY={gasoline:0.74,diesel:0.84,lpg:0.54};
+const FUEL_FACTOR_TON={coal:1.900,coke:2.860,lpg:3.101,gasoline:2.925,diesel:3.096};
+const GAS_FACTOR=2.162;
+const HEAT_FACTOR=0.11,STEAM_TO_GJ=2.7;
+const ELECTRICITY_GRID_FACTORS={'全国平均':0.5703,'华北':0.5768,'东北':0.5568,'华东':0.5568,'华中':0.5257,'西北':0.4405,'南方':0.4035,'西南':0.2258,'西藏':0.0234};
+const SCOPE3_FACTORS={business_travel:0.00018,employee_commute:0.00015,upstream_transport:0.00010,waste:0.50};
+
+const EMISSION_SOURCES=[
+  {key:'coal',name:'原煤',scope:'Scope 1',category:'固定燃烧',unit:'吨',desc:'锅炉、窑炉等固定设施燃煤消耗量',stds:['GHG','ISO','国标']},
+  {key:'coke',name:'焦炭',scope:'Scope 1',category:'固定燃烧',unit:'吨',desc:'高炉、化产等焦炭消耗量',stds:['GHG','ISO','国标']},
+  {key:'natural_gas',name:'天然气',scope:'Scope 1',category:'固定燃烧',unit:'m³',desc:'锅炉、燃气轮机等天然气消耗量',stds:['GHG','ISO','国标']},
+  {key:'lpg',name:'液化石油气',scope:'Scope 1',category:'固定燃烧',unit:'吨',desc:'液化石油气消耗量',stds:['GHG','ISO','国标']},
+  {key:'gasoline_stationary',name:'汽油(固定源)',scope:'Scope 1',category:'固定燃烧',unit:'L',desc:'固定设施汽油消耗量',stds:['GHG','ISO','国标']},
+  {key:'diesel_stationary',name:'柴油(固定源)',scope:'Scope 1',category:'固定燃烧',unit:'L',desc:'固定设施柴油消耗量',stds:['GHG','ISO','国标']},
+  {key:'gasoline_mobile',name:'汽油(移动源)',scope:'Scope 1',category:'移动燃烧',unit:'L',desc:'公务用车、叉车等汽油消耗量',stds:['GHG','ISO','国标']},
+  {key:'diesel_mobile',name:'柴油(移动源)',scope:'Scope 1',category:'移动燃烧',unit:'L',desc:'货车、工程机械等柴油消耗量',stds:['GHG','ISO','国标']},
+  {key:'process_co2',name:'工业过程CO₂',scope:'Scope 1',category:'工业过程',unit:'吨',desc:'碳酸盐分解、发酵等工艺过程排放',stds:['GHG','ISO','国标']},
+  {key:'electricity',name:'外购电力',scope:'Scope 2',category:'净购电力',unit:'kWh',desc:'电费单总用电量',stds:['GHG','ISO','国标']},
+  {key:'heat',name:'外购热力',scope:'Scope 2',category:'净购热力',unit:'GJ',desc:'外购蒸汽/热水等热力',stds:['GHG','ISO','国标']},
+  {key:'steam',name:'外购蒸汽',scope:'Scope 2',category:'净购热力',unit:'吨',desc:'外购蒸汽按质量吨计',stds:['GHG','ISO','国标']},
+  {key:'business_travel',name:'员工差旅(航空)',scope:'Scope 3',category:'差旅',unit:'人·公里',desc:'员工因公航空出行总里程',stds:['GHG','ISO','国标']},
+  {key:'employee_commute',name:'员工通勤',scope:'Scope 3',category:'通勤',unit:'人·公里',desc:'员工上下班通勤总里程',stds:['GHG','ISO','国标']},
+  {key:'upstream_transport',name:'上游运输',scope:'Scope 3',category:'运输',unit:'吨·公里',desc:'原材料进厂运输周转量',stds:['GHG','ISO','国标']},
+  {key:'waste',name:'固废处理',scope:'Scope 3',category:'废弃物',unit:'吨',desc:'工业固废、生活垃圾处理量',stds:['GHG','ISO','国标']},
+];
+
+const INDUSTRY_MATCH={
+  '制造业':{std:'国标',focus:['electricity','coal','natural_gas'],grid:'华东'},
+  '化工':{std:'GHG',focus:['process_co2','electricity','steam','coal'],grid:'华东'},
+  '能源':{std:'ISO',focus:['coal','coke','electricity','diesel_mobile'],grid:'华北'},
+  '交通/物流':{std:'GHG',focus:['gasoline_mobile','diesel_mobile','electricity'],grid:'全国平均'},
+  '建筑/地产':{std:'国标',focus:['electricity','natural_gas','diesel_stationary'],grid:'全国平均'},
+  '信息技术':{std:'GHG',focus:['electricity','business_travel','employee_commute'],grid:'全国平均'},
+  '通用':{std:'GHG',focus:['electricity','natural_gas','coal','gasoline_mobile'],grid:'全国平均'}
+};
+const INDUSTRY_LIST=Object.keys(INDUSTRY_MATCH);
+const GRID_LIST=Object.keys(ELECTRICITY_GRID_FACTORS);
+
+// 行业预设数据模板
+const INDUSTRY_TEMPLATES={
+  '制造业':{electricity:5000000,natural_gas:80000,coal:200,gasoline_mobile:15000,diesel_mobile:50000,heat:2000,steam:500,business_travel:200000,employee_commute:500000,upstream_transport:100000,waste:300},
+  '化工':{electricity:8000000,natural_gas:200000,coal:500,process_co2:1000,steam:2000,heat:5000,diesel_mobile:30000,waste:500},
+  '交通/物流':{diesel_mobile:500000,gasoline_mobile:100000,electricity:500000,upstream_transport:500000},
+  '信息技术':{electricity:2000000,business_travel:500000,employee_commute:300000,waste:50},
+  '建筑/地产':{electricity:1000000,natural_gas:20000,diesel_stationary:50000,heat:1000,waste:200},
+  '通用':{electricity:1000000,natural_gas:30000,coal:100,gasoline_mobile:5000,diesel_mobile:10000}
+};
+
+// =============================================
+// 计算引擎
+// =============================================
+function calcEmission(key,value,gridRegion){
+  if(value<=0)return{emission:0,formula:''};
+  const region=key==='electricity'?(gridRegion||'全国平均'):'';
+  if(key==='coal'){const e=value*FUEL_FACTOR_TON.coal;return{emission:e,formula:`${value}吨 × 1.900 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='coke'){const e=value*FUEL_FACTOR_TON.coke;return{emission:e,formula:`${value}吨 × 2.860 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='lpg'){const e=value*FUEL_FACTOR_TON.lpg;return{emission:e,formula:`${value}吨 × 3.101 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='natural_gas'){const e=value*GAS_FACTOR/10000;return{emission:e,formula:`${value}m³ × 2.162÷10000 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='gasoline_stationary'||key==='gasoline_mobile'){const e=value*FUEL_FACTOR_TON.gasoline*FUEL_DENSITY.gasoline/1000;return{emission:e,formula:`${value}L × 0.74kg/L÷1000×2.925 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='diesel_stationary'||key==='diesel_mobile'){const e=value*FUEL_FACTOR_TON.diesel*FUEL_DENSITY.diesel/1000;return{emission:e,formula:`${value}L × 0.84kg/L÷1000×3.096 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='process_co2')return{emission:value,formula:`${value}吨CO₂（直接排放）`};
+  if(key==='electricity'){const gf=ELECTRICITY_GRID_FACTORS[region]||ELECTRICITY_GRID_FACTORS['全国平均'];const e=value*gf/1000;return{emission:e,formula:`${value}kWh × ${gf}g/kWh÷1000 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='heat'){const e=value*HEAT_FACTOR;return{emission:e,formula:`${value}GJ × 0.11 = ${e.toFixed(4)} tCO₂e`}}
+  if(key==='steam'){const e=value*HEAT_FACTOR*STEAM_TO_GJ;return{emission:e,formula:`${value}吨 × 2.7GJ/t×0.11 = ${e.toFixed(4)} tCO₂e`}}
+  if(SCOPE3_FACTORS[key]!==undefined){const f=SCOPE3_FACTORS[key];return{emission:value*f,formula:`${value} × ${f} = ${(value*f).toFixed(4)} tCO₂e`}}
+  return{emission:0,formula:'未知'};
+}
+
+function calculateProject(pid){
+  const p=STORE.projects.find(x=>x.id===pid);if(!p)return null;
+  const data=STORE.activityData[pid]||{},grid=p.gridRegion||'全国平均',std=p.standard||'GHG';
+  const details=[],scopeTotals={'Scope 1':0,'Scope 2':0,'Scope 3':0},catTotals={};let total=0;
+  const srcs=EMISSION_SOURCES.filter(s=>s.stds.includes(std));
+  for(const src of srcs){
+    const val=parseFloat(data[src.key])||0,{emission,formula}=calcEmission(src.key,val,grid);
+    details.push({key:src.key,name:src.name,scope:src.scope,category:src.category,unit:src.unit,value:val,emission,formula});
+    scopeTotals[src.scope]=(scopeTotals[src.scope]||0)+emission;
+    catTotals[src.category]=(catTotals[src.category]||0)+emission;
+    total+=emission;
+  }
+  details.forEach(d=>d.pct=total>0?(d.emission/total*100):0);
+  return{total,scopeTotals,categoryTotals:catTotals,details};
+}
+
+function validateData(pid){
+  const data=STORE.activityData[pid]||{},issues=[];
+  const hasCore=['electricity','natural_gas','coal','diesel_mobile','gasoline_mobile'].some(k=>(parseFloat(data[k])||0)>0);
+  if(!hasCore)issues.push({level:'error',msg:'请至少填写一项核心能耗数据'});
+  const r=calculateProject(pid);
+  if(r&&r.total>10000)issues.push({level:'warning',msg:'⚠️ 年度排放量超过1万吨，建议核实数据或关注碳交易履约义务'});
+  const hasS3=['business_travel','employee_commute','upstream_transport','waste'].some(k=>(parseFloat(data[k])||0)>0);
+  if(!hasS3&&hasCore)issues.push({level:'info',msg:'未填写范围三数据，完整披露建议补充'});
+  return issues;
+}
+
+// =============================================
+// 项目CRUD
+// =============================================
+function createProject(fd){
+  const p={id:Date.now(),name:fd.name||'未命名',companyName:fd.companyName||'',accountingYear:fd.accountingYear||String(new Date().getFullYear()),standard:fd.standard||'GHG',gridRegion:fd.gridRegion||'全国平均',industry:fd.industry||'通用',revenue:parseFloat(fd.revenue)||0,outputQuantity:parseFloat(fd.outputQuantity)||0,intensityUnit:fd.intensityUnit||'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  STORE.projects.push(p);STORE.activityData[p.id]={};
+  addLog(p.id,'创建项目','project',String(p.id),'',JSON.stringify({name:p.name}));
+  STORE.settings.lastProjectId=p.id;saveStore(STORE);return p;
+}
+function updateProject(pid,upd){
+  const i=STORE.projects.findIndex(x=>x.id===pid);if(i===-1)return;
+  Object.assign(STORE.projects[i],upd,{updatedAt:new Date().toISOString()});saveStore(STORE);
+}
+function deleteProject(pid){
+  STORE.projects=STORE.projects.filter(x=>x.id!==pid);delete STORE.activityData[pid];delete STORE.snapshots[pid];
+  STORE.auditLogs=STORE.auditLogs.filter(l=>l.projectId!==pid);
+  if(STORE.settings.lastProjectId===pid)STORE.settings.lastProjectId=null;saveStore(STORE);
+}
+function getProject(pid){return STORE.projects.find(x=>x.id===pid)}
+function saveActivityData(pid,data){
+  const old={...(STORE.activityData[pid]||{})};STORE.activityData[pid]={...old,...data};
+  STORE.projects.forEach(x=>{if(x.id===pid)x.updatedAt=new Date().toISOString()});
+  for(const[k,v]of Object.entries(data)){if((parseFloat(old[k])||0)!==(parseFloat(v)||0)){addLog(pid,'更新数据','activity',k,String(old[k]||'0'),String(v||'0'))}}
+  saveStore(STORE);
+}
+
+// =============================================
+// 状态管理
+// =============================================
+let currentPage='project',currentProjectId=STORE.settings.lastProjectId||null,currentStep='scope1',selectedProjectId=null;
+let chartInstances={};
+
+function navigate(page){currentPage=page;document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');refreshProjectSelect();renderPage()}
+function onProjectSwitch(){const v=document.getElementById('projectSelect').value;currentProjectId=v?parseInt(v):null;if(currentProjectId)STORE.settings.lastProjectId=currentProjectId;saveStore(STORE);updateHeader();renderPage()}
+function refreshProjectSelect(){const sel=document.getElementById('projectSelect');if(!sel)return;sel.innerHTML='<option value="">📌 选择当前项目...</option>';STORE.projects.forEach(p=>{sel.innerHTML+=`<option value="${p.id}" ${p.id===currentProjectId?'selected':''}>${esc(p.name)} (${p.accountingYear})</option>`})}
+function updateHeader(){const m={project:'项目管理',data:'数据录入',result:'核算结果',compare:'同比对比',factor:'排放因子库',policy:'政策更新',audit:'审计日志'};document.getElementById('pageTitle').textContent=m[currentPage]||'';const b=document.getElementById('currentProjectBadge');if(currentProjectId){const p=getProject(currentProjectId);b.textContent=p?`📌 ${p.name} | ${p.companyName} | ${p.accountingYear}`:'未选择项目';b.style.color='var(--primary-dark)'}else{b.textContent='未选择项目 | 请先创建或打开项目';b.style.color='var(--text-light)'}}
+function getStdLabel(s){const m={GHG:'GHG Protocol',ISO:'ISO 14064-1','国标':'GB/T 32150-2015'};return m[s]||s}
+
+// =============================================
+// 政策自动更新引擎
+// =============================================
+async function checkPolicyUpdate(silent=false){
+  const url=STORE.settings.updateUrl||UPDATE_URL;
+  document.getElementById('updateStatus').textContent='检查更新中...';
+  try{
+    const resp=await fetch(url,{method:'GET',cache:'no-cache',signal:AbortSignal.timeout(8000)});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const latestVer=data.version||'';
+    const currentVer=STORE.factorVersions.length>0?STORE.factorVersions[0].version:'';
+    if(latestVer&&latestVer!==currentVer){
+      STORE.settings.lastCheckTime=new Date().toISOString();saveStore(STORE);
+      document.getElementById('updateStatus').innerHTML=`<span class="update-badge">有新版本: ${latestVer}</span>`;
+      document.getElementById('updateBadge').style.display='inline';
+      if(!silent){showUpdateAvailableModal(data)}}
+    else{
+      STORE.settings.lastCheckTime=new Date().toISOString();saveStore(STORE);
+      document.getElementById('updateStatus').textContent='已是最新 ✓';
+      document.getElementById('updateBadge').style.display='none';
+      if(!silent){showToast('✅ 排放因子已是最新版本')}}
+  }catch(e){
+    document.getElementById('updateStatus').textContent=silent?'':'离线模式';
+    if(!silent){showToast('⚠️ 无法连接更新服务器，使用本地因子库')}
+  }
+}
+
+function applyPolicyUpdate(data){
+  const version=data.version||'unknown';
+  const factors=data.factors||[];
+  const desc=data.description||'';
+  // 应用新因子到内存（这里更新内置常量）
+  if(data.gridFactors){Object.assign(ELECTRICITY_GRID_FACTORS,data.gridFactors)}
+  if(data.fuelFactors){Object.assign(FUEL_FACTOR_TON,data.fuelFactors)}
+  if(data.scope3Factors){Object.assign(SCOPE3_FACTORS,data.scope3Factors)}
+  // 记录更新历史
+  STORE.factorVersions.unshift({version,description:desc,factorCount:factors.length,time:new Date().toISOString(),source:data.source||'remote'});
+  if(STORE.factorVersions.length>50)STORE.factorVersions=STORE.factorVersions.slice(0,50);
+  STORE.settings.lastCheckTime=new Date().toISOString();
+  saveStore(STORE);
+  addLog(null,'政策更新','policy',version,'',desc);
+  document.getElementById('updateBadge').style.display='none';
+  document.getElementById('updateStatus').textContent=`已更新至 ${version} ✓`;
+  showToast(`✅ 已更新 ${factors.length} 条排放因子至版本 ${version}`);
+}
+
+function showUpdateAvailableModal(data){
+  const version=data.version||'?';
+  const desc=data.description||'新版本排放因子可用';
+  const count=(data.factors||[]).length;
+  showModal(`
+    <h3>🔄 发现政策更新</h3>
+    <div class="alert alert-info">检测到新版本排放因子：<b>${version}</b></div>
+    <p style="line-height:1.8;font-size:13px">${desc}</p>
+    <p style="font-size:12px;color:var(--text-light);margin-top:8px">包含 <b>${count}</b> 条因子更新</p>
+    <div class="btn-group" style="justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-outline" onclick="closeModal()">稍后提醒</button>
+      <button class="btn btn-primary" onclick="applyPolicyUpdate(${JSON.stringify(data).replace(/"/g,'&quot;')});closeModal();if(currentPage==='policy')renderPage()">立即更新</button>
+    </div>`);
+}
+
+// =============================================
+// 项目管理页
+// =============================================
+function renderProjectPage(){
+  document.getElementById('pageContent').innerHTML=`
+    <div class="card"><div class="card-title">📋 项目列表</div>
+      <div class="btn-group" style="margin-bottom:14px">
+        <button class="btn btn-primary" onclick="showCreateModal()">+ 新建项目</button>
+        <button class="btn btn-outline" onclick="showTemplateModal()">📋 行业模板快速创建</button>
+        <button class="btn btn-outline" onclick="openSelectedProject()">📂 打开选中</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSelectedProject()">🗑 删除</button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th style="width:40px">选</th><th>ID</th><th>项目名称</th><th>企业</th><th>行业</th><th>年度</th><th>标准</th><th>电网</th><th>更新时间</th></tr></thead>
+        <tbody id="projectTableBody"></tbody>
+      </table></div>
+    </div>`;
+  refreshProjectTable();
+}
+function refreshProjectTable(){
+  const tb=document.getElementById('projectTableBody');if(!tb)return;
+  tb.innerHTML=STORE.projects.length===0?'<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-light)">暂无项目，点击"+ 新建项目"开始 🚀</td></tr>'
+    :STORE.projects.map(p=>`<tr onclick="selectProjectRow(${p.id})" style="cursor:pointer;${p.id===selectedProjectId?'background:#eafaf1':''}"><td><input type="radio" name="pr" ${p.id===selectedProjectId?'checked':''} onclick="event.stopPropagation();selectProjectRow(${p.id})"></td><td>${p.id}</td><td><b>${esc(p.name)}</b></td><td>${esc(p.companyName)}</td><td>${esc(p.industry||'通用')}</td><td>${p.accountingYear}</td><td>${getStdLabel(p.standard)}</td><td>${p.gridRegion}</td><td>${(p.updatedAt||'').substring(0,16)}</td></tr>`).join('');
+}
+function selectProjectRow(id){selectedProjectId=id;refreshProjectTable()}
+function openSelectedProject(){if(!selectedProjectId){alert('请先选中一个项目');return}currentProjectId=selectedProjectId;STORE.settings.lastProjectId=currentProjectId;saveStore(STORE);updateHeader();refreshProjectSelect();renderPage()}
+function deleteSelectedProject(){if(!selectedProjectId){alert('请先选中一个项目');return}if(confirm('确定删除？不可撤销。')){deleteProject(selectedProjectId);if(currentProjectId===selectedProjectId)currentProjectId=null;selectedProjectId=null;updateHeader();refreshProjectSelect();renderPage()}}
+
+function showCreateModal(){
+  const gridOpts=GRID_LIST.map(g=>`<option value="${g}">${g}</option>`).join('');
+  const indOpts=INDUSTRY_LIST.map(i=>`<option value="${i}">${i}</option>`).join('');
+  showModal(`
+    <h3>🏗 新建核算项目</h3>
+    <div class="form-row"><div class="form-group"><label>项目名称 *</label><input id="fName" placeholder="例：XX公司2024碳核算"></div><div class="form-group"><label>企业名称</label><input id="fCompany" placeholder="企业全称"></div></div>
+    <div class="form-row"><div class="form-group"><label>核算年度 *</label><input id="fYear" type="number" value="${new Date().getFullYear()}"></div><div class="form-group"><label>所属行业</label><select id="fIndustry" onchange="onIndustryChange()">${indOpts}</select></div></div>
+    <div id="matchHint" class="match-card" style="display:none"></div>
+    <div class="form-row"><div class="form-group"><label>核算标准</label><select id="fStandard"><option value="GHG">GHG Protocol</option><option value="ISO">ISO 14064-1</option><option value="国标">GB/T 32150-2015</option></select></div><div class="form-group"><label>电网区域</label><select id="fGrid">${gridOpts}</select></div></div>
+    <div class="form-row"><div class="form-group"><label>营收（万元）</label><input id="fRevenue" type="number" value="0" step="0.01"></div><div class="form-group"><label>产量</label><input id="fOutput" type="number" value="0" step="0.01"></div></div>
+    <div class="form-group"><label>强度单位</label><input id="fUnit" placeholder="如：吨产品"></div>
+    <div class="btn-group" style="justify-content:flex-end;margin-top:14px"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="handleCreateProject()">保存</button></div>`);
+  onIndustryChange();
+}
+function onIndustryChange(){
+  const ind=document.getElementById('fIndustry')?.value,match=INDUSTRY_MATCH[ind],hint=document.getElementById('matchHint');
+  if(!match||!hint)return;hint.style.display='block';
+  const fNames=match.focus.map(k=>{const s=EMISSION_SOURCES.find(x=>x.key===k);return s?s.name:k}).join('、');
+  hint.innerHTML=`<h4>💡 智能推荐（${ind}）</h4><p style="font-size:12px">推荐标准：<b>${getStdLabel(match.std)}</b> | 电网：<b>${match.grid}</b></p><p style="font-size:12px">重点关注：<b>${fNames}</b></p><div class="match-tags"><span class="match-tag recommend">${getStdLabel(match.std)}</span><span class="match-tag focus">${fNames}</span></div>`;
+  document.getElementById('fStandard').value=match.std;document.getElementById('fGrid').value=match.grid;
+}
+function handleCreateProject(){
+  const fd={name:document.getElementById('fName').value.trim(),companyName:document.getElementById('fCompany').value.trim(),accountingYear:document.getElementById('fYear').value.trim(),industry:document.getElementById('fIndustry').value,standard:document.getElementById('fStandard').value,gridRegion:document.getElementById('fGrid').value,revenue:document.getElementById('fRevenue').value,outputQuantity:document.getElementById('fOutput').value,intensityUnit:document.getElementById('fUnit').value.trim()};
+  if(!fd.name||!fd.accountingYear){alert('项目名称和核算年度必填');return}
+  const p=createProject(fd);
+  // 应用行业模板数据
+  const tpl=INDUSTRY_TEMPLATES[fd.industry];
+  if(tpl){STORE.activityData[p.id]={...tpl};saveStore(STORE);addLog(p.id,'应用行业模板','template',fd.industry,'',JSON.stringify(tpl))}
+  currentProjectId=p.id;selectedProjectId=p.id;updateHeader();refreshProjectSelect();closeModal();
+  showToast('✅ 项目已创建'+(tpl?'，已预填行业模板数据':''));renderPage();
+}
+function showTemplateModal(){
+  let html='<h3>📋 行业模板快速创建</h3><p style="font-size:12px;color:var(--text-light);margin-bottom:14px">选择行业后自动创建项目并预填典型排放数据，快速体验</p>';
+  for(const[ind,match]of Object.entries(INDUSTRY_MATCH)){
+    const fNames=match.focus.map(k=>{const s=EMISSION_SOURCES.find(x=>x.key===k);return s?s.name:k}).join('、');
+    html+=`<div class="template-card" style="margin-bottom:10px" onclick="closeModal();quickCreateFromTemplate('${ind}')"><h4>🏭 ${ind}</h4><p>标准：${getStdLabel(match.std)} | 电网：${match.grid} | 重点：${fNames}</p></div>`;
+  }
+  html+='<div class="btn-group" style="justify-content:flex-end;margin-top:12px"><button class="btn btn-outline" onclick="closeModal()">取消</button></div>';
+  showModal(html);
+}
+function quickCreateFromTemplate(ind){
+  const m=INDUSTRY_MATCH[ind];
+  const p=createProject({name:`${ind}企业${new Date().getFullYear()}碳核算`,companyName:'示例企业',accountingYear:String(new Date().getFullYear()),industry:ind,standard:m.std,gridRegion:m.grid,revenue:10000,outputQuantity:5000,intensityUnit:'吨产品'});
+  const tpl=INDUSTRY_TEMPLATES[ind]||{};
+  STORE.activityData[p.id]={...tpl};saveStore(STORE);
+  addLog(p.id,'模板快速创建','template',ind,'',JSON.stringify(tpl));
+  currentProjectId=p.id;selectedProjectId=p.id;updateHeader();refreshProjectSelect();renderPage();
+  showToast(`✅ 已创建 ${ind} 行业项目，含预填数据`);
+}
+
+// =============================================
+// 数据录入页
+// =============================================
+function renderDataEntryPage(){
+  if(!currentProjectId){document.getElementById('pageContent').innerHTML=`<div class="empty-state"><div class="empty-icon">📝</div><h3>请先选择项目</h3><p>左侧【项目管理】创建或打开项目</p><button class="btn btn-primary" onclick="navigate('project')">前往</button></div>`;return}
+  const p=getProject(currentProjectId),std=p?.standard||'GHG',sources=EMISSION_SOURCES.filter(s=>s.stds.includes(std)),data=STORE.activityData[currentProjectId]||{};
+  const si={'Scope 1':{title:'范围一：直接排放',cls:'scope1-h',icon:'🔥'},'Scope 2':{title:'范围二：能源间接排放',cls:'scope2-h',icon:'⚡'},'Scope 3':{title:'范围三：其他间接排放',cls:'scope3-h',icon:'🌐'}};
+  const so=['Scope 1','Scope 2','Scope 3'],sl=['范围一：直接排放','范围二：间接排放','范围三：其他排放'];
+  let html=`<div class="card" style="margin-bottom:10px"><span style="font-size:12px;color:var(--text-light)">标准：<b>${getStdLabel(std)}</b> | 电网：<b>${p.gridRegion}</b> | 行业：<b>${p.industry||'通用'}</b></span></div><div class="steps">`;
+  so.forEach((s,i)=>{let cls=currentStep===s.toLowerCase().replace(' ','')?'active':'';html+=`<div class="step ${cls}" onclick="currentStep='${s.toLowerCase().replace(' ','')}';renderPage()"><span class="step-num">${i+1}</span>${sl[i]}</div>`});
+  html+=`</div>`;
+  const ts=currentStep==='scope1'?'Scope 1':currentStep==='scope2'?'Scope 2':'Scope 3',ss=sources.filter(s=>s.scope===ts),info=si[ts];
+  html+=`<div class="scope-group"><div class="scope-header ${info.cls}">${info.icon} ${info.title}</div><div class="scope-body">`;
+  for(const src of ss){
+    const val=data[src.key]!==undefined?data[src.key]:'';
+    html+=`<div class="form-group" style="display:flex;align-items:center;gap:10px"><label style="width:150px;flex-shrink:0;margin-bottom:0">${src.name}（${src.unit}）<span class="tooltip">?<span class="tooltip-text">${src.desc}</span></span></label><input type="text" id="input_${src.key}" value="${val}" style="width:170px" oninput="validateNum(this)" placeholder="输入数值"><span style="font-size:10px;color:var(--text-light)">${src.desc}</span></div>`;
+  }
+  html+=`</div></div>`;
+  html+=`<div class="btn-group" style="justify-content:space-between"><div>${currentStep!=='scope1'?`<button class="btn btn-outline" onclick="currentStep='${currentStep==='scope2'?'scope1':'scope2'}';renderPage()">⬅ 上一步</button>`:''}</div><div><button class="btn btn-primary" onclick="saveDataFromForm()">💾 保存</button>${currentStep!=='scope3'?`<button class="btn btn-info" onclick="saveDataFromForm();currentStep='${currentStep==='scope1'?'scope2':'scope3'}';renderPage()">下一步 ➡</button>`:''}<button class="btn btn-info" onclick="saveDataFromForm();navigate('result')" style="margin-left:6px">📊 查看结果</button></div></div>`;
+  document.getElementById('pageContent').innerHTML=html;
+}
+function validateNum(el){const v=el.value,c=v.replace(/[^0-9.]/g,''),p=c.split('.'),f=p.length>2?p[0]+'.'+p.slice(1).join(''):c;if(f!==v)el.value=f;el.classList.toggle('error',f!==''&&f!=='.'&&isNaN(parseFloat(f)))}
+function saveDataFromForm(){
+  if(!currentProjectId)return;const p=getProject(currentProjectId),std=p?.standard||'GHG',sources=EMISSION_SOURCES.filter(s=>s.stds.includes(std));
+  const data={...(STORE.activityData[currentProjectId]||{})};
+  for(const src of sources){const el=document.getElementById('input_'+src.key);if(el)data[src.key]=parseFloat(el.value)||0}
+  saveActivityData(currentProjectId,data);updateHeader();showToast('✅ 已保存');
+}
+
+// =============================================
+// 核算结果页
+// =============================================
+function renderResultPage(){
+  if(!currentProjectId){document.getElementById('pageContent').innerHTML=`<div class="empty-state"><div class="empty-icon">📊</div><h3>请先选择项目</h3><button class="btn btn-primary" onclick="navigate('project')">前往</button></div>`;return}
+  Object.values(chartInstances).forEach(c=>c.destroy());chartInstances={};
+  const r=calculateProject(currentProjectId);
+  if(!r||r.total<=0){document.getElementById('pageContent').innerHTML=`<div class="empty-state"><div class="empty-icon">📊</div><h3>暂无数据</h3><p>请先在【数据录入】填写数据</p><button class="btn btn-primary" onclick="navigate('data')">前往录入</button></div>`;return}
+  const p=getProject(currentProjectId),issues=validateData(currentProjectId),ih=issues.map(i=>`<div class="alert alert-${i.level==='error'?'danger':i.level==='warning'?'warning':'info'}">${i.msg}</div>`).join('');
+  const s1=r.scopeTotals['Scope 1']||0,s2=r.scopeTotals['Scope 2']||0,s3=r.scopeTotals['Scope 3']||0,t=r.total;
+  let ih2='';if(p.revenue>0)ih2=`<div class="kpi-row"><div class="kpi-card" style="border-left-color:var(--info)"><div class="kpi-label">💰 营收强度</div><div class="kpi-value">${(t/p.revenue).toFixed(4)}</div><div class="kpi-unit">tCO₂e/万元</div></div></div>`;
+  let dr='';r.details.forEach(d=>{if(d.value>0||d.emission>0.0001)dr+=`<tr><td><b>${d.name}</b></td><td>${d.scope}</td><td>${d.category}</td><td>${d.value}</td><td>${d.unit}</td><td><b>${d.emission.toFixed(4)}</b></td><td>${d.pct.toFixed(2)}%</td><td><span class="formula-toggle" onclick="this.nextElementSibling.classList.toggle('show')">公式</span><div class="formula-detail">${esc(d.formula)}</div></td></tr>`});
+  document.getElementById('pageContent').innerHTML=`
+    ${ih}
+    <div class="kpi-row"><div class="kpi-card"><div class="kpi-label">🌍 总排放</div><div class="kpi-value">${t.toFixed(2)}</div><div class="kpi-unit">tCO₂e</div></div><div class="kpi-card scope1"><div class="kpi-label">🔥 范围一</div><div class="kpi-value">${s1.toFixed(2)}</div><div class="kpi-unit">tCO₂e（${t>0?(s1/t*100).toFixed(1):0}%）</div></div><div class="kpi-card scope2"><div class="kpi-label">⚡ 范围二</div><div class="kpi-value">${s2.toFixed(2)}</div><div class="kpi-unit">tCO₂e（${t>0?(s2/t*100).toFixed(1):0}%）</div></div><div class="kpi-card scope3"><div class="kpi-label">🌐 范围三</div><div class="kpi-value">${s3.toFixed(2)}</div><div class="kpi-unit">tCO₂e（${t>0?(s3/t*100).toFixed(1):0}%）</div></div></div>
+    ${ih2}
+    <div class="chart-row"><div class="chart-box"><div class="chart-title">🍩 范围分布</div><canvas id="scopeChart"></canvas></div><div class="chart-box"><div class="chart-title">📊 分类对比</div><canvas id="categoryChart"></canvas></div></div>
+    <div class="card"><div class="card-title">📋 排放明细</div><div class="table-wrap"><table><thead><tr><th>排放源</th><th>范围</th><th>分类</th><th>数据</th><th>单位</th><th>排放(tCO₂e)</th><th>占比</th><th>计算</th></tr></thead><tbody>${dr}</tbody></table></div></div>
+    <div class="btn-group" style="margin-top:10px"><button class="btn btn-primary" onclick="exportExcel()">📥 导出Excel</button><button class="btn btn-info" onclick="createSnapshot()">📸 生成快照</button></div>`;
+  setTimeout(()=>{
+    const sc=document.getElementById('scopeChart'),cc=document.getElementById('categoryChart');
+    if(sc)chartInstances.scope=new Chart(sc,{type:'doughnut',data:{labels:['范围一','范围二','范围三'],datasets:[{data:[s1,s2,s3],backgroundColor:['#e74c3c','#f39c12','#3498db'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+    if(cc){const cats=r.categoryTotals;chartInstances.cat=new Chart(cc,{type:'bar',data:{labels:Object.keys(cats),datasets:[{label:'tCO₂e',data:Object.values(cats),backgroundColor:['#3498db','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c']}]},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}}}})}
+  },100);
+}
+function createSnapshot(){
+  if(!currentProjectId)return;const r=calculateProject(currentProjectId);if(!r)return;
+  const name='V_'+new Date().toISOString().replace(/[-:T]/g,'').substring(0,15);
+  if(!STORE.snapshots[currentProjectId])STORE.snapshots[currentProjectId]=[];
+  STORE.snapshots[currentProjectId].unshift({name,data:{calcResult:r},time:new Date().toISOString()});
+  addLog(currentProjectId,'创建快照','snapshot',name,'','');saveStore(STORE);showToast('✅ 快照 '+name+' 已生成');
+}
+
+// =============================================
+// Excel导出
+// =============================================
+function exportExcel(){
+  if(!currentProjectId)return;const p=getProject(currentProjectId),r=calculateProject(currentProjectId);if(!r)return;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['ESG碳核算助手3.0 报告'],[],['项目',p.name],['企业',p.companyName],['年度',p.accountingYear],['标准',getStdLabel(p.standard)],['电网',p.gridRegion],['行业',p.industry||'通用'],[],['生成时间',new Date().toLocaleString()]]),'项目信息');
+  const ir=[['排放源','范围','分类','单位','数据']];r.details.forEach(d=>ir.push([d.name,d.scope,d.category,d.unit,d.value]));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ir),'活动数据');
+  const fr=[['排放源','因子','单位','来源']];const g=p.gridRegion||'全国平均';fr.push(['电力',ELECTRICITY_GRID_FACTORS[g]||0.5703,'gCO₂/kWh',`生态环境部${g}电网`]);fr.push(['天然气',GAS_FACTOR/10000,'tCO₂/m³','GB/T 32150']);fr.push(['原煤',1.900,'tCO₂/t','发改委']);fr.push(['汽油',2.925,'tCO₂/t','GB/T 32150']);fr.push(['柴油',3.096,'tCO₂/t','GB/T 32150']);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fr),'排放因子');
+  const cr=[['排放源','范围','数据','单位','公式','排放(tCO₂e)','占比']];r.details.filter(d=>d.emission>0.0001).forEach(d=>cr.push([d.name,d.scope,d.value,d.unit,d.formula,d.emission.toFixed(4),d.pct.toFixed(2)+'%']));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cr),'计算过程');
+  const sr=[['汇总','值','单位']];sr.push(['总排放',r.total.toFixed(4),'tCO₂e']);for(const[s,v]of Object.entries(r.scopeTotals))sr.push([s,v.toFixed(4),`tCO₂e（${r.total>0?(v/r.total*100).toFixed(2):0}%）`]);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sr),'结果汇总');
+  const lr=[['时间','操作','对象','旧值','新值']];STORE.auditLogs.filter(l=>l.projectId===currentProjectId).slice(-200).forEach(l=>lr.push([(l.time||'').substring(0,19),l.action,l.key,l.oldVal,l.newVal]));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(lr),'审计日志');
+  const fn=`碳排放报告_${p.name}_${new Date().toISOString().substring(0,10)}.xlsx`;
+  XLSX.writeFile(wb,fn);addLog(currentProjectId,'导出Excel','export',fn,'','');saveStore(STORE);showToast('✅ 已导出：'+fn);
+}
+
+// =============================================
+// 同比对比页（新功能）
+// =============================================
+function renderComparePage(){
+  document.getElementById('pageContent').innerHTML=`
+    <div class="card"><div class="card-title">📈 多项目同比对比</div>
+      <p style="font-size:12px;color:var(--text-light);margin-bottom:12px">选择多个项目进行排放量横向对比，适用于不同年度或不同企业的排放分析</p>
+      <div id="compareSelection" class="btn-group" style="margin-bottom:14px"></div>
+      <button class="btn btn-primary btn-sm" onclick="doCompare()">开始对比</button>
+      <button class="btn btn-outline btn-sm" onclick="selectAllProjects()">全选</button>
+      <button class="btn btn-outline btn-sm" onclick="clearCompare()">清空</button>
+    </div>
+    <div id="compareResults"></div>`;
+  const sel=document.getElementById('compareSelection');
+  STORE.projects.forEach(p=>{sel.innerHTML+=`<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px"><input type="checkbox" class="cmpChk" value="${p.id}">${esc(p.name)} (${p.accountingYear})</label>`});
+}
+function selectAllProjects(){document.querySelectorAll('.cmpChk').forEach(c=>c.checked=true)}
+function clearCompare(){document.querySelectorAll('.cmpChk').forEach(c=>c.checked=false);document.getElementById('compareResults').innerHTML=''}
+function doCompare(){
+  const ids=[...document.querySelectorAll('.cmpChk:checked')].map(c=>parseInt(c.value));
+  if(ids.length<2){showToast('请至少选择2个项目进行对比');return}
+  const results=ids.map(id=>{const p=getProject(id),r=calculateProject(id);return{name:p.name,year:p.accountingYear,total:r?r.total:0,scope1:r?r.scopeTotals['Scope 1']||0:0,scope2:r?r.scopeTotals['Scope 2']||0:0,scope3:r?r.scopeTotals['Scope 3']||0:0}}).filter(r=>r.total>0);
+  if(results.length<2){document.getElementById('compareResults').innerHTML='<div class="alert alert-warning">至少2个项目需要有排放数据</div>';return}
+  let tableRows=results.map((r,i)=>{const maxT=Math.max(...results.map(x=>x.total));return`<tr><td><b>${esc(r.name)}</b></td><td>${r.year}</td><td><b>${r.total.toFixed(2)}</b></td><td>${r.scope1.toFixed(2)}</td><td>${r.scope2.toFixed(2)}</td><td>${r.scope3.toFixed(2)}</td><td><div style="background:var(--primary);height:18px;width:${maxT>0?r.total/maxT*200:0}px;border-radius:4px"></div></td></tr>`}).join('');
+  document.getElementById('compareResults').innerHTML=`
+    <div class="card"><div class="card-title">对比结果</div><div class="table-wrap"><table><thead><tr><th>项目</th><th>年度</th><th>总排放(tCO₂e)</th><th>范围一</th><th>范围二</th><th>范围三</th><th>可视化</th></tr></thead><tbody>${tableRows}</tbody></table></div></div>
+    <div class="chart-row"><div class="chart-box"><div class="chart-title">📊 排放量对比</div><canvas id="compareBarChart"></canvas></div><div class="chart-box"><div class="chart-title">🍩 范围结构对比</div><canvas id="compareStackChart"></canvas></div></div>`;
+  setTimeout(()=>{
+    const bc=document.getElementById('compareBarChart'),sc=document.getElementById('compareStackChart');
+    if(bc)new Chart(bc,{type:'bar',data:{labels:results.map(r=>r.name+'\n('+r.year+')'),datasets:[{label:'范围一',data:results.map(r=>r.scope1),backgroundColor:'#e74c3c'},{label:'范围二',data:results.map(r=>r.scope2),backgroundColor:'#f39c12'},{label:'范围三',data:results.map(r=>r.scope3),backgroundColor:'#3498db'}]},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+    if(sc)new Chart(sc,{type:'doughnut',data:{labels:results.map(r=>r.name),datasets:[{data:results.map(r=>r.total),backgroundColor:['#3498db','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c']}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+  },100);
+}
+
+// =============================================
+// 排放因子库页
+// =============================================
+function renderFactorPage(){
+  let html=`<div class="card"><div class="card-title">🔬 排放因子库</div><p style="font-size:12px;color:var(--text-light);margin-bottom:14px">来源：生态环境部2022年度电网因子、GB/T 32150-2015、IPCC、GHG Protocol</p>
+    <h4 style="margin-bottom:6px;color:var(--primary-dark)">⚡ 电网因子 (gCO₂/kWh)</h4><div class="table-wrap" style="margin-bottom:16px"><table><thead><tr><th>区域</th><th>因子</th><th>tCO₂/kWh</th></tr></thead><tbody>`;
+  for(const[r,f]of Object.entries(ELECTRICITY_GRID_FACTORS))html+=`<tr><td><b>${r}</b></td><td>${f}</td><td>${(f/1000).toFixed(6)}</td></tr>`;
+  html+=`</tbody></table></div><h4 style="margin-bottom:6px;color:var(--primary-dark)">🔥 燃料因子</h4><div class="table-wrap" style="margin-bottom:16px"><table><thead><tr><th>燃料</th><th>因子</th><th>单位</th><th>来源</th></tr></thead><tbody>
+    <tr><td>原煤</td><td>1.900</td><td>tCO₂/t</td><td>发改委</td></tr><tr><td>焦炭</td><td>2.860</td><td>tCO₂/t</td><td>发改委</td></tr><tr><td>天然气</td><td>2.162</td><td>tCO₂/万m³</td><td>GB/T 32150</td></tr><tr><td>LPG</td><td>3.101</td><td>tCO₂/t</td><td>GB/T 32150</td></tr><tr><td>汽油</td><td>2.925</td><td>tCO₂/t</td><td>GB/T 32150</td></tr><tr><td>柴油</td><td>3.096</td><td>tCO₂/t</td><td>GB/T 32150</td></tr><tr><td>热力</td><td>0.11</td><td>tCO₂/GJ</td><td>GB/T 32150</td></tr>
+  </tbody></table></div><h4 style="margin-bottom:6px;color:var(--primary-dark)">🌐 范围三因子</h4><div class="table-wrap"><table><thead><tr><th>排放源</th><th>因子</th><th>单位</th></tr></thead><tbody>
+    <tr><td>航空差旅</td><td>0.00018</td><td>tCO₂/人·km</td></tr><tr><td>通勤</td><td>0.00015</td><td>tCO₂/人·km</td></tr><tr><td>公路货运</td><td>0.00010</td><td>tCO₂/吨·km</td></tr><tr><td>固废</td><td>0.50</td><td>tCO₂/t</td></tr>
+  </tbody></table></div></div>`;
+  document.getElementById('pageContent').innerHTML=html;
+}
+
+// =============================================
+// 政策更新页（新功能）
+// =============================================
+function renderPolicyPage(){
+  const history=STORE.factorVersions||[];
+  let hRows='';
+  history.forEach(h=>{hRows+=`<tr><td>${h.version}</td><td>${(h.time||'').substring(0,19)}</td><td>${esc(h.description||'')}</td><td>${h.factorCount||0}条</td><td>${h.source||'remote'}</td></tr>`});
+  document.getElementById('pageContent').innerHTML=`
+    <div class="card">
+      <div class="card-title">🔄 政策与排放因子更新</div>
+      <div class="alert alert-info">💡 <b>v3.0 核心功能：</b>启动时自动检测远程排放因子更新，也可手动检查。更新源：生态环境部、IPCC、GB/T 32150 等官方发布渠道。</div>
+      <div class="btn-group" style="margin:14px 0">
+        <button class="btn btn-primary" onclick="checkPolicyUpdate(false)">🔍 手动检查更新</button>
+        <button class="btn btn-outline" onclick="showUpdateConfigModal()">⚙ 配置更新源</button>
+        <button class="btn btn-outline" onclick="importLocalUpdateFile()">📁 导入本地更新文件</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-light)">当前更新源：${esc(STORE.settings.updateUrl||UPDATE_URL)}</p>
+      <p style="font-size:11px;color:var(--text-light)">上次检查：${STORE.settings.lastCheckTime?(new Date(STORE.settings.lastCheckTime)).toLocaleString():'尚未检查'}</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 更新历史（最近50条）</div>
+      <div class="table-wrap"><table><thead><tr><th>版本</th><th>时间</th><th>说明</th><th>因子数</th><th>来源</th></tr></thead><tbody>${hRows||'<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">暂无更新记录，点击"手动检查更新"获取最新因子</td></tr>'}</tbody></table></div>
+    </div>`;
+}
+
+function showUpdateConfigModal(){
+  showModal(`
+    <h3>⚙ 配置更新源</h3>
+    <div class="form-group"><label>远程更新URL</label><input id="updateUrl" value="${esc(STORE.settings.updateUrl||UPDATE_URL)}" placeholder="输入JSON更新源URL"></div>
+    <div class="form-group"><label><input type="checkbox" id="autoCheck" ${STORE.settings.autoCheckUpdate?'checked':''}> 启动时自动检查更新</label></div>
+    <div class="btn-group" style="justify-content:flex-end;margin-top:14px"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="saveUpdateConfig()">保存</button></div>`);
+}
+function saveUpdateConfig(){
+  STORE.settings.updateUrl=document.getElementById('updateUrl').value.trim();
+  STORE.settings.autoCheckUpdate=document.getElementById('autoCheck').checked;
+  saveStore(STORE);closeModal();showToast('✅ 配置已保存');
+}
+function importLocalUpdateFile(){
+  const input=document.createElement('input');input.type='file';input.accept='.json';
+  input.onchange=function(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      try{const data=JSON.parse(ev.target.result);applyPolicyUpdate(data);if(currentPage==='policy')renderPage()}catch(err){showToast('❌ 文件解析失败：'+err.message)}
+    };reader.readAsText(file);
+  };input.click();
+}
+
+// =============================================
+// 审计日志页
+// =============================================
+function renderAuditPage(){
+  const logs=currentProjectId?STORE.auditLogs.filter(l=>l.projectId===currentProjectId):[...STORE.auditLogs];
+  let lr='';logs.slice(-200).reverse().forEach(l=>{lr+=`<tr><td>${(l.time||'').substring(0,19)}</td><td>${esc(l.action)}</td><td>${esc(l.entity)}</td><td>${esc(l.key)}</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.oldVal||'')}</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.newVal||'')}</td></tr>`});
+  document.getElementById('pageContent').innerHTML=`<div class="card"><div class="card-title">📜 审计日志 (${logs.length}条)</div><div class="table-wrap"><table><thead><tr><th>时间</th><th>操作</th><th>类型</th><th>对象</th><th>旧值</th><th>新值</th></tr></thead><tbody>${lr||'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">暂无日志</td></tr>'}</tbody></table></div></div>`;
+}
+
+// =============================================
+// 通用工具
+// =============================================
+function showModal(h){document.getElementById('modalBox').innerHTML=h;document.getElementById('modalOverlay').classList.add('show')}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show')}
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+function showToast(msg){
+  let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:30px;right:30px;background:#2c3e50;color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;z-index:9999;transition:all 0.3s;opacity:0;transform:translateY(20px)';document.body.appendChild(t)}
+  t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(20px)'},2500);
+}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+
+// Tooltip定位
+function initTooltips(){
+  document.querySelectorAll('.tooltip').forEach(tip=>{tip.addEventListener('mouseenter',function(){const box=tip.querySelector('.tooltip-text');if(!box)return;const r=tip.getBoundingClientRect();let l=r.right+8,t=r.top-10;if(l+270>window.innerWidth)l=r.left-270;if(l<210)l=210;if(t<10)t=r.bottom+5;if(t+80>window.innerHeight)t=window.innerHeight-85;box.style.left=l+'px';box.style.top=t+'px'})});
+}
+
+// 渲染调度
+function renderPage(){
+  updateHeader();setTimeout(initTooltips,50);
+  switch(currentPage){
+    case'project':renderProjectPage();break;case'data':renderDataEntryPage();break;
+    case'result':renderResultPage();break;case'compare':renderComparePage();break;
+    case'factor':renderFactorPage();break;case'policy':renderPolicyPage();break;
+    case'audit':renderAuditPage();break;default:renderProjectPage();
+  }
+}
+
+// 新手教程
+let tutorialStep=0;
+const TUTORIAL_STEPS=[
+  {title:'🌱 欢迎使用 ESG碳核算助手 3.0',content:'v3.0 全新升级：<br>  • <b>政策自动更新</b>：启动时自动检测排放因子更新<br>  • <b>行业模板</b>：一键创建项目并预填数据<br>  • <b>同比对比</b>：多项目排放横向对比<br>  • <b>更新历史</b>：追踪每次因子变更'},
+  {title:'📋 创建项目（行业智能匹配）',content:'左侧【项目管理】→【新建项目】<br>或使用【行业模板快速创建】一键生成<br><br>选行业后自动推荐核算标准、电网区域、重点关注排放源'},
+  {title:'🔄 政策自动更新',content:'<b>v3.0核心功能</b><br><br>启动时自动检测远程排放因子更新<br>发现新版本→弹窗提醒→一键更新<br><br>左侧【政策更新】可手动检查、配置更新源、导入本地文件'},
+  {title:'📝 录入数据 + 📊 查看结果',content:'按Scope 1→2→3分步录入<br>自动计算→KPI卡片+饼图+柱状图<br>Excel导出（6工作表）<br><br>📈 <b>同比对比</b>：多项目横向比较'},
+  {title:'🚀 开始使用',content:'教程结束！<br><br>建议：<br>1. 用行业模板快速创建项目<br>2. 到数据录入查看预填数据<br>3. 到核算结果看图表<br>4. 试试同比对比和导出功能'}
+];
+function showTutorial(step=0){
+  tutorialStep=step;const s=TUTORIAL_STEPS[step];
+  const dots=TUTORIAL_STEPS.map((_,i)=>`<span style="font-size:${i===step?'16px':'10px'};color:${i===step?'var(--primary)':'#ccc'}">●</span>`).join('');
+  showModal(`<h3>${s.title}</h3><div style="min-height:160px;line-height:1.9;font-size:13px">${s.content}</div><div style="display:flex;justify-content:center;gap:10px;margin:18px 0">${dots}</div><div class="btn-group" style="justify-content:space-between"><div>${step>0?`<button class="btn btn-outline" onclick="showTutorial(${step-1})">⬅ 上一步</button>`:''}${step<TUTORIAL_STEPS.length-1?`<button class="btn btn-outline" onclick="closeModal()">跳过</button>`:''}</div>${step<TUTORIAL_STEPS.length-1?`<button class="btn btn-primary" onclick="showTutorial(${step+1})">下一步 ➡</button>`:`<button class="btn btn-primary" onclick="finishTutorial()">开始使用 🚀</button>`}</div>`);
+}
+function finishTutorial(){STORE.settings.tutorialShown=true;saveStore(STORE);closeModal()}
+
+// 初始化
+function init(){
+  document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>navigate(el.dataset.page)));
+  refreshProjectSelect();if(currentProjectId&&!getProject(currentProjectId))currentProjectId=null;
+  updateHeader();renderPage();
+  if(!STORE.settings.tutorialShown)setTimeout(()=>showTutorial(0),600);
+  // 自动检查政策更新
+  if(STORE.settings.autoCheckUpdate!==false){
+    document.getElementById('updateStatus').textContent='正在检查更新...';
+    setTimeout(()=>checkPolicyUpdate(true),2000);
+  }
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
