@@ -22,7 +22,7 @@ load_dotenv()
 # ============ 配置 ============
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "esg_4_0.db"
-HTML_PATH = BASE_DIR / "ESG碳核算助手4.0.html"
+HTML_PATH = BASE_DIR / "ESG碳核算助手5.0.html"
 SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)  # 生产环境用环境变量固定，避免重启后 token 失效
 TOKEN_EXPIRE_DAYS = 7
 
@@ -174,7 +174,7 @@ async def get_current_user(request: Request) -> dict:
         return dict(user)
 
 # ============ FastAPI 应用 ============
-app = FastAPI(title="ESG碳核算助手 4.0 API", version="4.0")
+app = FastAPI(title="ESG碳核算助手 5.0 API", version="5.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ============ 请求模型 ============

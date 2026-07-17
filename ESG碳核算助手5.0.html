@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESG碳核算助手 5.0</title>
+<style>
+:root{--p:#27ae60;--pd:#1e8449;--r:#e74c3c;--w:#f39c12;--b:#3498db;--sb:#1a252f;--sw:200px;--bg:#f0f4f3;--cw:#fff;--t:#2c3e50;--tl:#7f8c8d;--bd:#dce4e2}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);min-height:100vh;display:flex}
+/* 登录页 */
+.lp{display:flex;width:100%;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a252f 0%,#2c3e50 50%,#27ae60 100%)}
+.lc{background:#fff;border-radius:20px;padding:40px;width:430px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.lc h1{font-size:24px;text-align:center;margin-bottom:4px;color:var(--pd)}
+.lc h1 span{font-size:28px}
+.lc .st{text-align:center;font-size:13px;color:var(--tl);margin-bottom:28px}
+.lc .fg{margin-bottom:16px}
+.lc label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--t)}
+.lc input{width:100%;padding:12px 14px;border:2px solid var(--bd);border-radius:10px;font-size:14px;font-family:inherit;transition:border 0.2s}
+.lc input:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,0.1)}
+.lc .btn{width:100%;padding:13px;font-size:15px;justify-content:center;margin-top:6px;border-radius:10px;font-weight:700;letter-spacing:2px}
+.lc .sw{text-align:center;margin-top:16px;font-size:13px;color:var(--tl)}
+.lc .sw a{color:var(--p);cursor:pointer;font-weight:700;text-decoration:none}
+.lc .sw a:hover{text-decoration:underline}
+.lc .em{color:var(--r);font-size:12px;text-align:center;margin-top:8px;min-height:18px}
+/* 侧边栏 */
+.ac{display:none;width:100%}
+.sidebar{width:var(--sw);background:var(--sb);color:#ecf0f1;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.shd{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.shd h2{font-size:15px;font-weight:700;color:#fff}.shd h2 span{font-size:18px}
+.shd .ver{font-size:10px;color:#2ecc71;margin-top:3px}
+.snav{flex:1;padding:6px 0}
+.ni{display:flex;align-items:center;gap:9px;padding:11px 18px;cursor:pointer;color:#bdc3c7;transition:all 0.15s;border-left:3px solid transparent;font-size:13px}
+.ni:hover{background:rgba(255,255,255,0.05);color:#fff}
+.ni.acv{background:rgba(39,174,96,0.2);color:#2ecc71;border-left-color:#2ecc71}
+.ni .ic{font-size:15px;width:22px;text-align:center}
+.ni .badge{background:#e74c3c;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:auto;display:none}
+.psw{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.1)}
+.psw select{width:100%;padding:7px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#2c3e50;color:#ecf0f1;font-size:11px}
+.uinf{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:8px;font-size:11px;color:#95a5a6}
+.uinf .lo{cursor:pointer;color:#e74c3c;margin-left:auto;font-size:11px}.uinf .lo:hover{text-decoration:underline}
+/* 主内容 */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.hdr{background:var(--cw);padding:14px 28px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.hdr h1{font-size:19px;font-weight:700;color:var(--pd)}
+.ctn{flex:1;padding:20px 28px;overflow-y:auto}
+/* 卡片 */
+.card{background:var(--cw);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.ctt{font-size:15px;font-weight:700;margin-bottom:14px;color:var(--t);padding-bottom:10px;border-bottom:2px solid var(--bd)}
+.kr{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.kc{flex:1;min-width:160px;background:var(--cw);border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border-left:5px solid var(--p);display:flex;flex-direction:column;gap:5px}
+.kc.s1{border-left-color:#e74c3c}.kc.s2{border-left-color:#f39c12}.kc.s3{border-left-color:#3498db}
+.kc .kl{font-size:11px;color:var(--tl);letter-spacing:0.5px}
+.kc .kv{font-size:28px;font-weight:700;color:var(--t)}
+.kc .ku{font-size:11px;color:var(--tl)}
+.cr{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.cb{flex:1;min-width:340px;background:var(--cw);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.cb .ctl{font-size:14px;font-weight:700;margin-bottom:10px}
+.cb canvas{max-height:280px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:12px;font-weight:600;margin-bottom:3px;color:var(--t)}
+.fg input,.fg select{width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;transition:border 0.2s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,0.1)}
+.fg input.err{border-color:var(--r);background:#fdf2f2}
+.fr{display:flex;gap:14px}.fr .fg{flex:1}
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+.btn-p{background:var(--p);color:#fff}.btn-p:hover{background:var(--pd)}
+.btn-r{background:var(--r);color:#fff}.btn-b{background:var(--b);color:#fff}
+.btn-o{background:transparent;border:1px solid var(--bd);color:var(--t)}.btn-o:hover{background:var(--bg)}
+.btn-sm{padding:5px 10px;font-size:11px}.bgp{display:flex;gap:8px;flex-wrap:wrap}
+.steps{display:flex;margin-bottom:16px}
+.step{flex:1;text-align:center;padding:10px 14px;background:var(--bg);border-bottom:3px solid var(--bd);font-size:12px;font-weight:600;color:var(--tl);cursor:pointer;transition:all 0.2s}
+.step.on{border-bottom-color:var(--p);color:var(--p);background:#eafaf1}
+.step .sn{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--bd);color:#fff;margin-right:5px;font-size:11px}
+.step.on .sn{background:var(--p)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--bd)}
+th{background:var(--bg);font-weight:700;color:var(--t);position:sticky;top:0}tr:hover{background:#f8faf9}
+.tw{max-height:380px;overflow-y:auto;overflow-x:auto;border:1px solid var(--bd);border-radius:8px;-webkit-overflow-scrolling:touch}
+.sg{border:1px solid var(--bd);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.sg .sh{padding:12px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px}
+.sg .sh.h1{background:#fdecea;color:#e74c3c}.sg .sh.h2{background:#fef5e7;color:#d68910}.sg .sh.h3{background:#eaf2f8;color:#3498db}
+.sg .sb{padding:10px 14px}
+.alert{padding:11px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px}
+.alert-w{background:#fef9e7;border:1px solid #f9e79f;color:#7d6608}
+.alert-e{background:#fdedec;border:1px solid #f5b7b1;color:#922b21}
+.alert-i{background:#eaf2f8;border:1px solid #aed6f1;color:#1a5276}
+.alert-s{background:#eafaf1;border:1px solid #a9dfbf;color:#145a32}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--cw);border-radius:16px;padding:28px;max-width:580px;width:90%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.modal h3{font-size:17px;margin-bottom:18px;color:var(--pd)}
+.tip{position:relative;display:inline-block;cursor:help;color:var(--b);font-weight:700;margin-left:3px}
+.tip .tt{visibility:hidden;width:260px;background:#2c3e50;color:#fff;text-align:left;border-radius:8px;padding:10px 12px;position:fixed;z-index:9999;font-size:11px;font-weight:400;line-height:1.5;opacity:0;transition:opacity 0.15s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.tip:hover .tt{visibility:visible;opacity:1}
+.empty-state{text-align:center;padding:50px 20px;color:var(--tl)}
+.empty-state .ei{font-size:56px;margin-bottom:14px}.empty-state h3{font-size:17px;margin-bottom:7px;color:var(--t)}
+.empty-state p{font-size:13px;margin-bottom:18px}
+.match-card{border:2px dashed var(--p);background:#eafaf1;border-radius:12px;padding:14px;margin-bottom:14px}
+.match-card h4{color:var(--pd);margin-bottom:6px;font-size:13px}
+.mtag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;margin:3px}
+.mtag.rec{background:var(--p);color:#fff}.mtag.foc{background:#fef9e7;color:#7d6608;border:1px solid #f9e79f}
+.tplc{border:1px solid var(--bd);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s}
+.tplc:hover{border-color:var(--p);background:#eafaf1;transform:translateY(-2px)}
+.tplc h4{font-size:13px;margin-bottom:5px}.tplc p{font-size:11px;color:var(--tl)}
+.formula-toggle{cursor:pointer;color:var(--b);font-size:11px;text-decoration:underline}
+.formula-detail{display:none;font-size:11px;color:var(--tl);margin-top:3px;padding:5px 9px;background:var(--bg);border-radius:6px;font-family:monospace}.formula-detail.show{display:block}
+.up-badge{display:inline-block;background:#e74c3c;color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;animation:pls 2s infinite}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:0.5}}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.tag-new{background:#e74c3c;color:#fff}.tag-up{background:#f39c12;color:#fff}.tag-ok{background:var(--p);color:#fff}
+
+/* ===== 汉堡菜单（仅移动端显示） ===== */
+.hamburger{display:none;position:fixed;top:8px;left:8px;z-index:200;background:var(--p);color:#fff;border:none;width:38px;height:38px;border-radius:10px;font-size:22px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.3);line-height:1}
+.sidebar-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:99}
+
+/* ===== 数据录入行（替代内联style，便于响应式） ===== */
+.de-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.de-label{width:150px;flex-shrink:0;margin-bottom:0;font-size:12px;font-weight:600;color:var(--t)}
+.de-input{width:170px;padding:9px 11px;border:1px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;transition:border .2s}
+.de-input:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,.1)}
+.de-input.err{border-color:var(--r);background:#fdf2f2}
+.de-desc{font-size:10px;color:var(--tl)}
+
+/* ==============================
+   移动端适配 (≤768px)
+   ============================== */
+@media (max-width:768px){
+  /* 汉堡菜单 */
+  .hamburger{display:flex}
+
+  /* 侧边栏 → 左侧滑出抽屉 */
+  .sidebar{width:230px;position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);transition:transform .25s;z-index:100;overflow-y:auto}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.active{display:block}
+
+  /* 侧边栏头部简化 */
+  .shd{padding:14px 12px}
+  .shd h2{font-size:13px}
+  .psw{padding:8px 10px}
+  .uinf{padding:8px 10px;font-size:10px}
+
+  /* 主内容区 */
+  .main{margin-left:0!important}
+  .ctn{padding:12px 8px}
+  .hdr{flex-direction:column;padding:10px 14px 10px 52px;gap:4px;align-items:flex-start}
+  .hdr h1{font-size:16px}
+
+  /* KPI卡片 */
+  .kr{flex-direction:column;gap:8px}
+  .kc{min-width:auto!important;padding:14px}
+  .kc .kv{font-size:22px}
+
+  /* 图表容器 */
+  .cr{flex-direction:column;gap:8px}
+  .cb{min-width:auto!important}
+
+  /* 表单行 */
+  .fr{flex-direction:column;gap:8px}
+
+  /* 数据录入行 */
+  .de-row{flex-wrap:wrap;gap:6px}
+  .de-label{width:100%!important}
+  .de-input{width:100%!important;max-width:100%}
+  .de-desc{display:none}
+
+  /* 登录卡片 */
+  .lp{padding:20px}
+  .lc{width:92%;padding:24px 18px;border-radius:14px}
+  .lc h1{font-size:20px}
+
+  /* 弹窗 */
+  .modal{width:95%;padding:16px;max-height:88vh}
+  .modal h3{font-size:15px}
+
+  /* 步骤条 */
+  .steps{flex-wrap:wrap}
+  .step{flex:1 1 auto;font-size:10px;padding:8px 4px;min-width:65px}
+  .step .sn{width:18px;height:18px;line-height:18px;font-size:10px;margin-right:2px}
+
+  /* Toast */
+  #toast{left:10px!important;right:10px!important;bottom:16px!important;font-size:12px;text-align:center}
+
+  /* 按钮组 */
+  .bgp{gap:6px}
+
+  /* 对比选择标签 */
+  #cmpSel{flex-direction:column;gap:4px}
+  #cmpSel label{width:100%}
+
+  /* 匹配提示卡片 */
+  .match-card{padding:10px}
+  .match-card h4{font-size:12px}
+
+  /* 卡片标题 */
+  .card .ctt{font-size:14px}
+
+  /* 行业模板卡 */
+  .tplc{padding:12px}
+  .tplc h4{font-size:12px}
+
+  /* 表格增强滚动 */
+  .tw{max-height:260px;overflow-x:auto}
+  .tw table{min-width:580px;font-size:11px}
+  th,td{padding:7px 6px}
+
+  /* 项目列表表格 */
+  #ptb td,#ptb th{font-size:11px}
+
+  /* 审计日志表格 */
+  .card .tw{max-height:240px}
+
+  /* 教程弹窗 */
+  .modal .bgp{flex-direction:row!important}
+  .modal .bgp .btn{width:auto}
+}
+
+/* ===== AI 智能助手样式 ===== */
+.ai-float-btn{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;font-size:26px;cursor:pointer;z-index:200;box-shadow:0 4px 20px rgba(108,92,231,0.4);transition:all .2s;display:flex;align-items:center;justify-content:center}
+.ai-float-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(108,92,231,0.55)}
+.ai-float-btn.loading{animation:aiPulse 1.2s infinite}
+@keyframes aiPulse{0%,100%{box-shadow:0 4px 20px rgba(108,92,231,0.4)}50%{box-shadow:0 4px 36px rgba(108,92,231,0.75)}}
+
+.ai-panel{display:none;position:fixed;bottom:90px;right:24px;width:420px;max-height:560px;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.18);z-index:201;flex-direction:column;overflow:hidden}
+.ai-panel.open{display:flex}
+.ai-panel-header{background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.ai-panel-header h3{font-size:15px;font-weight:700;margin:0}
+.ai-panel-close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;opacity:0.8}
+.ai-panel-body{flex:1;overflow-y:auto;padding:16px;max-height:380px;font-size:13px;line-height:1.8}
+.ai-panel-body .msg{margin-bottom:12px;padding:10px 14px;border-radius:12px;max-width:90%;word-break:break-word}
+.ai-panel-body .msg.user{align-self:flex-end;background:#f0f4f3;color:var(--t);margin-left:auto}
+.ai-panel-body .msg.assistant{background:#f8f0ff;color:var(--t);border:1px solid #e8d5f5}
+.ai-panel-body .msg.assistant h3{font-size:14px;color:#6c5ce7;margin:8px 0 4px}
+.ai-panel-body .msg.assistant ul,.ai-panel-body .msg.assistant ol{padding-left:18px;margin:4px 0}
+.ai-panel-body .msg.assistant li{margin-bottom:3px}
+.ai-panel-body .msg.assistant strong{color:#5b2c9d}
+.ai-panel-body .typing{align-items:center;gap:6px;padding:8px 14px}
+.ai-panel-body .typing span{width:7px;height:7px;border-radius:50%;background:#a855f7;animation:dotBounce 1.4s infinite;display:inline-block;margin:0 2px}
+.ai-panel-body .typing span:nth-child(2){animation-delay:.2s}
+.ai-panel-body .typing span:nth-child(3){animation-delay:.4s}
+@keyframes dotBounce{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.ai-panel-input{border-top:1px solid var(--bd);padding:10px 14px;display:flex;gap:8px}
+.ai-panel-input input{flex:1;padding:10px 14px;border:1px solid var(--bd);border-radius:20px;font-size:13px;font-family:inherit;outline:none}
+.ai-panel-input input:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
+.ai-panel-input button{background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;flex-shrink:0;transition:all .2s}
+.ai-panel-input button:hover{transform:scale(1.05)}
+
+.ai-analyze-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.ai-analyze-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(108,92,231,0.35)}
+.ai-analyze-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+
+.ai-result{background:#faf9ff;border:1px solid #e8d5f5;border-radius:12px;padding:16px;margin-top:12px;line-height:1.8;font-size:13px;display:none}
+.ai-result.show{display:block}
+.ai-result h3{color:#6c5ce7;font-size:15px;margin:10px 0 6px}
+.ai-result h3:first-child{margin-top:0}
+.ai-result ul,.ai-result ol{padding-left:20px;margin:6px 0}
+.ai-result li{margin-bottom:4px}
+.ai-result strong{color:#5b2c9d}
+.ai-result code{background:#f0edff;padding:1px 5px;border-radius:3px;font-size:12px}
+
+/* ===== 政策 AI 页 ===== */
+.policy-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.policy-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--bd);background:#fff;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.policy-chip:hover{border-color:var(--p);background:#eafaf1;color:var(--pd)}
+.policy-chip:active{background:var(--p);color:#fff}
+.policy-ask-row{display:flex;gap:8px;margin-bottom:12px}
+.policy-ask-row input{flex:1;padding:10px 14px;border:2px solid var(--bd);border-radius:10px;font-size:13px;font-family:inherit;outline:none}
+.policy-ask-row input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(39,174,96,.1)}
+.policy-ask-row button{padding:10px 18px;background:var(--p);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.policy-ask-row button:hover{background:var(--pd)}
+.policy-answer{background:#fafdfb;border:1px solid #d4e9dc;border-radius:12px;padding:16px;line-height:1.9;font-size:13px;display:none;margin-bottom:14px}
+.policy-answer.show{display:block}
+.policy-answer h1,.policy-answer h2,.policy-answer h3{color:var(--pd);font-size:15px;margin:10px 0 6px}
+.policy-answer h1:first-child,.policy-answer h2:first-child,.policy-answer h3:first-child{margin-top:0}
+.policy-answer ul,.policy-answer ol{padding-left:20px;margin:6px 0}
+.policy-answer li{margin-bottom:4px}
+.policy-answer strong{color:#145a32}
+.policy-answer code{background:#eafaf1;padding:1px 5px;border-radius:3px}
+.policy-answer table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.policy-answer th,.policy-answer td{border:1px solid var(--bd);padding:6px 10px;text-align:left}
+.policy-answer th{background:var(--bg)}
+.factor-update-banner{background:#fffbe6;border:2px dashed #f39c12;border-radius:10px;padding:12px 16px;margin-top:12px;display:none}
+.factor-update-banner.show{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.factor-update-banner .info{font-size:12px;color:#7d6608}
+.factor-update-banner .info b{color:#d68910}
+
+/* 移动端 AI 面板 */
+@media (max-width:768px){
+  .ai-panel{width:calc(100vw - 20px);right:10px;bottom:80px;max-height:65vh}
+  .ai-float-btn{bottom:16px;right:16px;width:48px;height:48px;font-size:22px}
+  .ai-panel-body{max-height:50vh}
+}
+</style>
+</head>
+<body>
+
+<div class="lp" id="loginPage">
+  <div class="lc">
+    <h1><span>&#127793;</span> ESG碳核算助手</h1>
+    <div class="st">v5.0 · 多用户版 · AI 智能驱动</div>
+    <div id="loginForm">
+      <div class="fg"><label>&#128100; 用户名</label><input id="loginUser" placeholder="请输入用户名"></div>
+      <div class="fg"><label>&#128274; 密码</label><input id="loginPass" type="password" placeholder="请输入密码"></div>
+      <div class="em" id="loginError"></div>
+      <button class="btn btn-p" id="btnLogin">&#128273; 登 录</button>
+      <div class="sw">还没有账号？<a id="linkRegister">立即注册 &#10132;</a></div>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div class="fg"><label>&#128100; 用户名 *</label><input id="regUser" placeholder="至少2个字符"></div>
+      <div class="fg"><label>&#128231; 邮箱</label><input id="regEmail" placeholder="选填"></div>
+      <div class="fg"><label>&#127970; 企业名称</label><input id="regCompany" placeholder="选填"></div>
+      <div class="fg"><label>&#128274; 密码 *</label><input id="regPass" type="password" placeholder="至少4个字符"></div>
+      <div class="em" id="regError"></div>
+      <button class="btn btn-p" id="btnRegister">&#9997; 注 册</button>
+      <div class="sw">已有账号？<a id="linkLogin">&#8617; 去登录</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="ac" id="appContainer">
+<button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">&#9776;</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<aside class="sidebar">
+  <div class="shd"><h2><span>&#127793;</span> ESG碳核算助手</h2><div class="ver">v5.0 · AI智能驱动</div></div>
+  <nav class="snav">
+    <div class="ni acv" data-page="project"><span class="ic">&#128203;</span><span>项目管理</span></div>
+    <div class="ni" data-page="data"><span class="ic">&#128221;</span><span>数据录入</span></div>
+    <div class="ni" data-page="result"><span class="ic">&#128202;</span><span>核算结果</span></div>
+    <div class="ni" data-page="compare"><span class="ic">&#128200;</span><span>同比对比</span></div>
+    <div class="ni" data-page="policy"><span class="ic">&#128260;</span><span>政策更新</span><span class="badge" id="upBadge">新</span></div>
+    <div class="ni" data-page="factor"><span class="ic">&#128300;</span><span>排放因子库</span></div>
+    <div class="ni" data-page="audit"><span class="ic">&#128214;</span><span>审计日志</span></div>
+  </nav>
+  <div class="psw">
+    <select id="projectSelect"><option value="">&#128204; 选择当前项目...</option></select>
+  </div>
+  <div class="uinf"><span>&#128104;&#8205;&#128187;</span><span id="sidebarUser">--</span><span class="lo" id="btnLogout">&#128682; 退出</span></div>
+</aside>
+<div class="main">
+  <div class="hdr"><h1 id="pageTitle">项目管理</h1><div style="display:flex;align-items:center;gap:12px"><span id="upStatus" style="font-size:11px;color:var(--tl)"></span><span id="currentProjectBadge" style="font-size:12px;color:var(--tl)">未选择项目</span></div></div>
+  <div class="ctn" id="pageContent"></div>
+</div>
+</div>
+<!-- AI 浮动按钮 -->
+<button class="ai-float-btn" id="aiFloatBtn" title="AI 碳核算助手" onclick="toggleAIChat()">&#129302;</button>
+<!-- AI 对话面板 -->
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <h3>&#129302; AI 碳核算助手</h3>
+    <button class="ai-panel-close" onclick="toggleAIChat()">&#10005;</button>
+  </div>
+  <div class="ai-panel-body" id="aiChatBody">
+    <div class="msg assistant">
+      &#128075; 你好！我是 ESG 碳核算 AI 助手。<br><br>
+      我可以帮你：<br>
+      &#8226; <b>分析排放数据</b> — 在核算结果页点击"AI 智能分析"<br>
+      &#8226; <b>回答碳核算问题</b> — 直接在这里提问<br>
+      &#8226; <b>解读政策法规</b> — 问你关心的双碳政策<br>
+      &#8226; <b>推荐减排方案</b> — 告诉我你的行业和情况<br><br>
+      <span style="font-size:11px;color:var(--tl)">由 DeepSeek 提供 AI 能力</span>
+    </div>
+  </div>
+  <div class="ai-panel-input">
+    <input id="aiChatInput" placeholder="输入你的问题..." onkeydown="if(event.key==='Enter')sendAIChat()">
+    <button onclick="sendAIChat()">&#10148;</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBox"></div></div>
+
+<script>
+// ===== API =====
+var API={
+  token:sessionStorage.getItem('esg_token')||'',
+  fetch:async function(path,opts){
+    opts=opts||{};
+    var hdrs=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+    if(this.token)hdrs['Authorization']='Bearer '+this.token;
+    var res=await fetch(path,Object.assign({},opts,{headers:hdrs}));
+    if(res.status===401){this.token='';sessionStorage.removeItem('esg_token');showLoginPage();throw new Error('未登录');}
+    if(!res.ok){var d=await res.json().catch(function(){return{}});throw new Error(d.detail||'请求失败');}
+    return res.json();
+  },
+  get:function(p){return this.fetch(p);},
+  post:function(p,b){return this.fetch(p,{method:'POST',body:JSON.stringify(b)});},
+  put:function(p,b){return this.fetch(p,{method:'PUT',body:JSON.stringify(b)});},
+  del:function(p){return this.fetch(p,{method:'DELETE'});}
+};
+
+// ===== 政策自动更新引擎 =====
+var UPDATE_URL='https://gist.githubusercontent.com/anonymous/esg-factors/raw/main/factors_v3.json';
+var updateHistory=[];
+
+function loadUpdateHistory(){
+  try{var raw=localStorage.getItem('esg_update_history');if(raw)updateHistory=JSON.parse(raw);}catch(e){updateHistory=[];}
+}
+function saveUpdateHistory(){localStorage.setItem('esg_update_history',JSON.stringify(updateHistory));}
+loadUpdateHistory();
+
+async function checkUpdate(silent){
+  var st=document.getElementById('upStatus');if(st)st.textContent='检查更新中...';
+  var url=localStorage.getItem('esg_update_url')||UPDATE_URL;
+  try{
+    var res=await fetch(url,{method:'GET',cache:'no-cache',signal:AbortSignal.timeout(8000)});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    var data=await res.json();
+    var latestVer=data.version||'';
+    var currentVer=updateHistory.length>0?updateHistory[0].version:'';
+    if(latestVer&&latestVer!==currentVer){
+      localStorage.setItem('esg_last_check',new Date().toISOString());
+      if(st)st.innerHTML='<span class="up-badge">有新版本: '+latestVer+'</span>';
+      var badge=document.getElementById('upBadge');if(badge)badge.style.display='inline';
+      if(!silent)showUpdateModal(data);
+    }else{
+      localStorage.setItem('esg_last_check',new Date().toISOString());
+      if(st)st.textContent='已是最新';
+      var badge=document.getElementById('upBadge');if(badge)badge.style.display='none';
+      if(!silent)showToast('排放因子已是最新版本');
+    }
+  }catch(e){
+    if(st)st.textContent=silent?'':'离线模式';
+    if(!silent)showToast('无法连接更新服务器，使用本地因子库');
+  }
+}
+
+function applyUpdate(data){
+  var version=data.version||'unknown';
+  var desc=data.description||'';
+  var count=(data.factors||[]).length;
+  if(data.gridFactors)Object.assign(EGF,data.gridFactors);
+  if(data.fuelFactors)Object.assign(FFT,data.fuelFactors);
+  if(data.scope3Factors)Object.assign(S3F,data.scope3Factors);
+  updateHistory.unshift({version:version,description:desc,factorCount:count,time:new Date().toISOString(),source:data.source||'remote'});
+  if(updateHistory.length>50)updateHistory=updateHistory.slice(0,50);
+  saveUpdateHistory();
+  var badge=document.getElementById('upBadge');if(badge)badge.style.display='none';
+  var st=document.getElementById('upStatus');if(st)st.textContent='已更新至 '+version;
+  showToast('已更新 '+count+' 条排放因子至版本 '+version);
+}
+
+function showUpdateModal(data){
+  var version=data.version||'?';
+  var desc=data.description||'新版本排放因子可用';
+  var count=(data.factors||[]).length;
+  showModal('<h3>&#128260; 发现政策更新</h3><div class="alert alert-i">检测到新版本排放因子：<b>'+version+'</b></div><p style="line-height:1.8;font-size:13px">'+desc+'</p><p style="font-size:12px;color:var(--tl);margin-top:8px">包含 <b>'+count+'</b> 条因子更新</p><div class="bgp" style="justify-content:flex-end;margin-top:20px"><button class="btn btn-o" onclick="closeModal()">稍后</button><button class="btn btn-p" onclick="applyUpdate('+JSON.stringify(data).replace(/"/g,'&quot;')+');closeModal();if(currentPage===\'policy\')renderPage()">立即更新</button></div>');
+}
+
+// ===== 登录注册 =====
+function showLogin(){document.getElementById('loginForm').style.display='block';document.getElementById('registerForm').style.display='none';document.getElementById('loginError').textContent='';}
+function showRegister(){document.getElementById('loginForm').style.display='none';document.getElementById('registerForm').style.display='block';document.getElementById('regError').textContent='';}
+function showLoginPage(){document.getElementById('loginPage').style.display='flex';document.getElementById('appContainer').style.display='none';}
+
+async function doLogin(){
+  var u=document.getElementById('loginUser').value.trim();
+  var p=document.getElementById('loginPass').value.trim();
+  if(!u||!p){document.getElementById('loginError').textContent='请输入用户名和密码';return;}
+  try{
+    var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    if(!res.ok){var d=await res.json().catch(function(){return{}});throw new Error(d.detail||'登录失败');}
+    var data=await res.json();
+    API.token=data.token;sessionStorage.setItem('esg_token',data.token);sessionStorage.setItem('esg_user',JSON.stringify(data.user));
+    showApp();
+  }catch(e){document.getElementById('loginError').textContent='❌ '+e.message;}
+}
+
+async function doRegister(){
+  var u=document.getElementById('regUser').value.trim();
+  var em=document.getElementById('regEmail').value.trim();
+  var c=document.getElementById('regCompany').value.trim();
+  var p=document.getElementById('regPass').value.trim();
+  if(u.length<2){document.getElementById('regError').textContent='用户名至少2个字符';return;}
+  if(p.length<4){document.getElementById('regError').textContent='密码至少4个字符';return;}
+  try{
+    var res=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,email:em,company:c})});
+    if(!res.ok){var d=await res.json().catch(function(){return{}});throw new Error(d.detail||'注册失败');}
+    alert('注册成功，请登录');showLogin();document.getElementById('loginUser').value=u;
+  }catch(e){document.getElementById('regError').textContent='❌ '+e.message;}
+}
+
+function doLogout(){API.token='';sessionStorage.removeItem('esg_token');sessionStorage.removeItem('esg_user');showLoginPage();}
+
+// ===== 全局状态 =====
+var currentPage='project',currentProjectId=null,currentStep='scope1',selectedProjectId=null;
+var projects=[],currentActivityData={},chartInstances={},currentUser=null;
+
+function stdLabel(s){var m={GHG:'GHG Protocol',ISO:'ISO 14064-1','国标':'GB/T 32150-2015'};return m[s]||s;}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):'';}
+
+// ===== 排放因子 & 计算引擎 =====
+var FD={gasoline:0.74,diesel:0.84,lpg:0.54};
+var FFT={coal:1.900,coke:2.860,lpg:3.101,gasoline:2.925,diesel:3.096};
+var GF=2.162,HF=0.11,STG=2.7;
+var EGF={'全国平均':0.5703,'华北':0.5768,'东北':0.5568,'华东':0.5568,'华中':0.5257,'西北':0.4405,'南方':0.4035,'西南':0.2258,'西藏':0.0234};
+var S3F={business_travel:0.00018,employee_commute:0.00015,upstream_transport:0.00010,waste:0.50};
+var EMS=[
+  {key:'coal',name:'原煤',scope:'Scope 1',cat:'固定燃烧',unit:'吨',desc:'锅炉、窑炉等固定设施燃煤消耗量',stds:['GHG','ISO','国标']},
+  {key:'coke',name:'焦炭',scope:'Scope 1',cat:'固定燃烧',unit:'吨',desc:'高炉、化产等焦炭消耗量',stds:['GHG','ISO','国标']},
+  {key:'natural_gas',name:'天然气',scope:'Scope 1',cat:'固定燃烧',unit:'m³',desc:'锅炉、燃气轮机等天然气消耗量',stds:['GHG','ISO','国标']},
+  {key:'lpg',name:'液化石油气',scope:'Scope 1',cat:'固定燃烧',unit:'吨',desc:'液化石油气消耗量',stds:['GHG','ISO','国标']},
+  {key:'gasoline_stationary',name:'汽油(固定源)',scope:'Scope 1',cat:'固定燃烧',unit:'L',desc:'固定设施汽油消耗量',stds:['GHG','ISO','国标']},
+  {key:'diesel_stationary',name:'柴油(固定源)',scope:'Scope 1',cat:'固定燃烧',unit:'L',desc:'固定设施柴油消耗量',stds:['GHG','ISO','国标']},
+  {key:'gasoline_mobile',name:'汽油(移动源)',scope:'Scope 1',cat:'移动燃烧',unit:'L',desc:'公务用车、叉车等汽油消耗量',stds:['GHG','ISO','国标']},
+  {key:'diesel_mobile',name:'柴油(移动源)',scope:'Scope 1',cat:'移动燃烧',unit:'L',desc:'货车、工程机械等柴油消耗量',stds:['GHG','ISO','国标']},
+  {key:'process_co2',name:'工业过程CO₂',scope:'Scope 1',cat:'工业过程',unit:'吨',desc:'碳酸盐分解、发酵等工艺过程排放',stds:['GHG','ISO','国标']},
+  {key:'electricity',name:'外购电力',scope:'Scope 2',cat:'净购电力',unit:'kWh',desc:'电费单总用电量',stds:['GHG','ISO','国标']},
+  {key:'heat',name:'外购热力',scope:'Scope 2',cat:'净购热力',unit:'GJ',desc:'外购蒸汽/热水等热力',stds:['GHG','ISO','国标']},
+  {key:'steam',name:'外购蒸汽',scope:'Scope 2',cat:'净购热力',unit:'吨',desc:'外购蒸汽按质量吨计',stds:['GHG','ISO','国标']},
+  {key:'business_travel',name:'员工差旅(航空)',scope:'Scope 3',cat:'差旅',unit:'人·公里',desc:'员工因公航空出行总里程',stds:['GHG','ISO','国标']},
+  {key:'employee_commute',name:'员工通勤',scope:'Scope 3',cat:'通勤',unit:'人·公里',desc:'员工上下班通勤总里程',stds:['GHG','ISO','国标']},
+  {key:'upstream_transport',name:'上游运输',scope:'Scope 3',cat:'运输',unit:'吨·公里',desc:'原材料进厂运输周转量',stds:['GHG','ISO','国标']},
+  {key:'waste',name:'固废处理',scope:'Scope 3',cat:'废弃物',unit:'吨',desc:'工业固废、生活垃圾处理量',stds:['GHG','ISO','国标']}
+];
+var INDM={'制造业':{std:'国标',focus:['electricity','coal','natural_gas'],grid:'华东'},'化工':{std:'GHG',focus:['process_co2','electricity','steam','coal'],grid:'华东'},'能源':{std:'ISO',focus:['coal','coke','electricity','diesel_mobile'],grid:'华北'},'交通/物流':{std:'GHG',focus:['gasoline_mobile','diesel_mobile','electricity'],grid:'全国平均'},'建筑/地产':{std:'国标',focus:['electricity','natural_gas','diesel_stationary'],grid:'全国平均'},'信息技术':{std:'GHG',focus:['electricity','business_travel','employee_commute'],grid:'全国平均'},'通用':{std:'GHG',focus:['electricity','natural_gas','coal','gasoline_mobile'],grid:'全国平均'}};
+var INDL=Object.keys(INDM),GRL=Object.keys(EGF);
+var INDTPL={'制造业':{electricity:5000000,natural_gas:80000,coal:200,gasoline_mobile:15000,diesel_mobile:50000,heat:2000,steam:500,business_travel:200000,employee_commute:500000,upstream_transport:100000,waste:300},'化工':{electricity:20000000,natural_gas:250000,coal:600,process_co2:800,steam:3000,heat:5000,diesel_mobile:40000,waste:600},'交通/物流':{diesel_mobile:500000,gasoline_mobile:100000,electricity:500000,upstream_transport:500000},'信息技术':{electricity:2000000,business_travel:500000,employee_commute:300000,waste:50},'建筑/地产':{electricity:1000000,natural_gas:20000,diesel_stationary:50000,heat:1000,waste:200},'通用':{electricity:1000000,natural_gas:30000,coal:100,gasoline_mobile:5000,diesel_mobile:10000}};
+
+function calcE(key,value,gridR){
+  if(value<=0)return{emission:0,formula:''};
+  var r=key==='electricity'?(gridR||'全国平均'):'',e,f;
+  if(key==='coal'){e=value*FFT.coal;f=value+'吨 x 1.900 = '+e.toFixed(4)+' tCO2e';}
+  else if(key==='coke'){e=value*FFT.coke;f=value+'吨 x 2.860 = '+e.toFixed(4)+' tCO2e';}
+  else if(key==='lpg'){e=value*FFT.lpg;f=value+'吨 x 3.101 = '+e.toFixed(4)+' tCO2e';}
+  else if(key==='natural_gas'){e=value*GF/10000;f=value+'m3 x 2.162/10000 = '+e.toFixed(4)+' tCO2e';}
+  else if(key.indexOf('gasoline')===0){e=value*FFT.gasoline*FD.gasoline/1000;f=value+'L x0.74/1000x2.925 = '+e.toFixed(4)+' tCO2e';}
+  else if(key.indexOf('diesel')===0){e=value*FFT.diesel*FD.diesel/1000;f=value+'L x0.84/1000x3.096 = '+e.toFixed(4)+' tCO2e';}
+  else if(key==='process_co2'){e=value;f=value+'吨CO2(直接排放)';}
+  else if(key==='electricity'){var gf=EGF[r]||EGF['全国平均'];e=value*gf/1000;f=value+'kWh x'+gf+'g/kWh/1000 = '+e.toFixed(4)+' tCO2e';}
+  else if(key==='heat'){e=value*HF;f=value+'GJ x0.11 = '+e.toFixed(4)+' tCO2e';}
+  else if(key==='steam'){e=value*HF*STG;f=value+'吨 x2.7x0.11 = '+e.toFixed(4)+' tCO2e';}
+  else if(S3F[key]!==undefined){var sf=S3F[key];e=value*sf;f=value+' x'+sf+' = '+e.toFixed(4)+' tCO2e';}
+  else{e=0;f='未知';}
+  return{emission:e,formula:f};
+}
+
+function calcProj(proj,ad){
+  if(!proj||!ad)return null;
+  var grid=proj.grid_region||'全国平均',std=proj.standard||'GHG';
+  var details=[],st={'Scope 1':0,'Scope 2':0,'Scope 3':0},ct={},total=0;
+  var srcs=EMS.filter(function(s){return s.stds.indexOf(std)>=0;});
+  for(var i=0;i<srcs.length;i++){
+    var src=srcs[i],val=parseFloat(ad[src.key])||0,ret=calcE(src.key,val,grid);
+    details.push({key:src.key,name:src.name,scope:src.scope,cat:src.cat,unit:src.unit,value:val,emission:ret.emission,formula:ret.formula});
+    st[src.scope]=(st[src.scope]||0)+ret.emission;ct[src.cat]=(ct[src.cat]||0)+ret.emission;total+=ret.emission;
+  }
+  for(var i=0;i<details.length;i++)details[i].pct=total>0?(details[i].emission/total*100):0;
+  return{total:total,scopeTotals:st,categoryTotals:ct,details:details};
+}
+
+// ===== 应用切换 =====
+async function showApp(){
+  try{var data=await API.get('/api/me');currentUser=data.user;
+    document.getElementById('loginPage').style.display='none';document.getElementById('appContainer').style.display='flex';
+    document.getElementById('sidebarUser').textContent=currentUser.username;
+    await loadProjects();updateHeader();renderPage();
+  }catch(e){showLoginPage();API.token='';sessionStorage.removeItem('esg_token');}
+}
+async function loadProjects(){
+  try{projects=await API.get('/api/projects');}catch(e){projects=[];}
+  refreshPS();if(currentProjectId&&!projects.find(function(p){return p.id===currentProjectId;}))currentProjectId=null;
+}
+
+// ===== 导航 =====
+function toggleSidebar(){
+  var sb=document.querySelector('.sidebar');
+  var ov=document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('active');
+}
+function nav(page){
+  currentPage=page;
+  document.querySelectorAll('.ni').forEach(function(el){el.classList.remove('acv');});
+  var el=document.querySelector('.ni[data-page="'+page+'"]');if(el)el.classList.add('acv');
+  // 移动端关闭侧边栏
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+  renderPage();
+}
+function onPS(){var v=document.getElementById('projectSelect').value;currentProjectId=v?parseInt(v):null;updateHeader();renderPage();}
+function refreshPS(){
+  var sel=document.getElementById('projectSelect');if(!sel)return;
+  sel.innerHTML='<option value="">&#128204; 选择当前项目...</option>';
+  projects.forEach(function(p){sel.innerHTML+='<option value="'+p.id+'"'+(p.id===currentProjectId?' selected':'')+'>'+esc(p.name)+' ('+(p.accounting_year||'')+')</option>';});
+}
+function updateHeader(){
+  var m={project:'项目管理',data:'数据录入',result:'核算结果',compare:'同比对比',policy:'政策更新',factor:'排放因子库',audit:'审计日志'};
+  document.getElementById('pageTitle').textContent=m[currentPage]||'';
+  var b=document.getElementById('currentProjectBadge');
+  if(currentProjectId){var p=projects.find(function(x){return x.id===currentProjectId;});b.textContent=p?'&#128204; '+p.name+' | '+(p.company_name||'')+' | '+(p.accounting_year||''):'未选择项目';b.style.color='var(--pd)';}
+  else{b.textContent='未选择项目 | 请先创建或打开项目';b.style.color='var(--tl)';}
+}
+
+// ===== 项目管理页 =====
+function renderProjectPage(){
+  document.getElementById('pageContent').innerHTML='<div class="card"><div class="ctt">&#128203; 项目列表</div><div class="bgp" style="margin-bottom:14px"><button class="btn btn-p" onclick="showCM()">+ 新建项目</button><button class="btn btn-o" onclick="showTM()">&#128203; 行业模板快速创建</button><button class="btn btn-o" onclick="openSP()">&#128194; 打开选中</button><button class="btn btn-r btn-sm" onclick="delSP()">&#128465; 删除</button></div><div class="tw"><table><thead><tr><th style="width:40px">选</th><th>ID</th><th>项目名称</th><th>企业名称</th><th>行业</th><th>年度</th><th>核算标准</th><th>电网</th><th>更新时间</th></tr></thead><tbody id="ptb"></tbody></table></div></div>';
+  refreshPT();
+}
+function refreshPT(){
+  var tb=document.getElementById('ptb');if(!tb)return;
+  if(projects.length===0){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--tl)">暂无项目，点击"+ 新建项目"开始你的第一次碳核算 &#127881;</td></tr>';return;}
+  tb.innerHTML=projects.map(function(p){return'<tr onclick="selPR('+p.id+')" style="cursor:pointer;'+(p.id===selectedProjectId?'background:#eafaf1':'')+'"><td><input type="radio" name="pr" '+(p.id===selectedProjectId?'checked':'')+' onclick="event.stopPropagation();selPR('+p.id+')"></td><td>'+p.id+'</td><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.company_name||'')+'</td><td>'+(p.industry||'通用')+'</td><td>'+ (p.accounting_year||'')+'</td><td>'+stdLabel(p.standard)+'</td><td>'+(p.grid_region||'全国平均')+'</td><td>'+((p.updated_at||'').substring(0,16))+'</td></tr>';}).join('');
+}
+function selPR(id){selectedProjectId=id;refreshPT();}
+function openSP(){if(!selectedProjectId){alert('请先选中一个项目');return;}currentProjectId=selectedProjectId;updateHeader();renderPage();}
+async function delSP(){if(!selectedProjectId){alert('请先选中一个项目');return;}if(!confirm('确定删除该项目及其所有数据？不可撤销。'))return;await API.del('/api/projects/'+selectedProjectId);if(currentProjectId===selectedProjectId)currentProjectId=null;selectedProjectId=null;await loadProjects();updateHeader();renderPage();}
+
+function showCM(){
+  var go=GRL.map(function(g){return'<option value="'+g+'">'+g+'</option>';}).join('');
+  var io=INDL.map(function(i){return'<option value="'+i+'">'+i+'</option>';}).join('');
+  showModal('<h3>&#127959; 新建核算项目</h3><div class="fr"><div class="fg"><label>项目名称 *</label><input id="fName" placeholder="例：XX公司2024年度碳核算"></div><div class="fg"><label>企业名称</label><input id="fCompany" placeholder="企业全称"></div></div><div class="fr"><div class="fg"><label>核算年度 *</label><input id="fYear" type="number" value="'+new Date().getFullYear()+'"></div><div class="fg"><label>所属行业</label><select id="fIndustry" onchange="onIC()">'+io+'</select></div></div><div id="matchHint" class="match-card" style="display:none"></div><div class="fr"><div class="fg"><label>核算标准</label><select id="fStandard"><option value="GHG">GHG Protocol</option><option value="ISO">ISO 14064-1</option><option value="国标">GB/T 32150-2015</option></select></div><div class="fg"><label>电网区域</label><select id="fGrid">'+go+'</select></div></div><div class="fr"><div class="fg"><label>营业收入（万元）</label><input id="fRevenue" type="number" value="0" step="0.01"></div><div class="fg"><label>产量/产出量</label><input id="fOutput" type="number" value="0" step="0.01"></div></div><div class="fg"><label>强度单位（如：吨产品）</label><input id="fUnit" placeholder="例：吨产品、万元产值"></div><div class="bgp" style="justify-content:flex-end;margin-top:14px"><button class="btn btn-o" onclick="closeModal()">取消</button><button class="btn btn-p" onclick="hCP()">&#128190; 保存项目</button></div>');
+  onIC();
+}
+function onIC(){
+  var ind=document.getElementById('fIndustry').value,m=INDM[ind],hint=document.getElementById('matchHint');
+  if(!m||!hint)return;hint.style.display='block';
+  var fns=m.focus.map(function(k){var s=EMS.find(function(x){return x.key===k;});return s?s.name:k;}).join('、');
+  hint.innerHTML='<h4>&#128161; 智能推荐（'+ind+'行业）</h4><p style="font-size:12px">根据行业特征，推荐核算标准为 <b>'+stdLabel(m.std)+'</b>，电网区域为 <b>'+m.grid+'</b></p><p style="font-size:12px">重点关注排放源：<b>'+fns+'</b></p><div style="margin-top:6px"><span class="mtag rec">推荐标准：'+stdLabel(m.std)+'</span><span class="mtag foc">重点关注：'+fns+'</span></div>';
+  document.getElementById('fStandard').value=m.std;document.getElementById('fGrid').value=m.grid;
+}
+async function hCP(){
+  var body={name:document.getElementById('fName').value.trim(),company_name:document.getElementById('fCompany').value.trim(),accounting_year:document.getElementById('fYear').value.trim(),industry:document.getElementById('fIndustry').value,standard:document.getElementById('fStandard').value,grid_region:document.getElementById('fGrid').value,revenue:parseFloat(document.getElementById('fRevenue').value)||0,output_quantity:parseFloat(document.getElementById('fOutput').value)||0,intensity_unit:document.getElementById('fUnit').value.trim()};
+  if(!body.name||!body.accounting_year){alert('项目名称和核算年度为必填项');return;}
+  var res=await API.post('/api/projects',body);currentProjectId=res.id;
+  var tpl=INDTPL[body.industry];if(tpl)await API.put('/api/projects/'+res.id+'/data',{data:tpl});
+  await loadProjects();updateHeader();closeModal();showToast('项目已创建，已预填行业模板数据');renderPage();
+}
+function showTM(){
+  var h='<h3>&#128203; 行业模板快速创建</h3><p style="font-size:12px;color:var(--tl);margin-bottom:14px">选择行业后自动创建项目并预填典型排放数据，快速体验完整流程</p>';
+  for(var ind in INDTPL){if(!INDM[ind])continue;var m=INDM[ind];var fns=m.focus.map(function(k){var s=EMS.find(function(x){return x.key===k;});return s?s.name:k;}).join('、');h+='<div class="tplc" style="margin-bottom:10px" onclick="closeModal();qC(\''+ind+'\')"><h4>&#127981; '+ind+'</h4><p>标准：'+stdLabel(m.std)+' | 电网：'+m.grid+' | 重点排放源：'+fns+'</p></div>';}
+  h+='<div class="bgp" style="justify-content:flex-end;margin-top:12px"><button class="btn btn-o" onclick="closeModal()">取消</button></div>';showModal(h);
+}
+async function qC(ind){
+  var m=INDM[ind],body={name:ind+'企业'+new Date().getFullYear()+'碳核算',company_name:'示例企业',accounting_year:String(new Date().getFullYear()),industry:ind,standard:m.std,grid_region:m.grid,revenue:10000,output_quantity:5000,intensity_unit:'吨产品'};
+  var res=await API.post('/api/projects',body);var tpl=INDTPL[ind]||{};
+  if(Object.keys(tpl).length>0)await API.put('/api/projects/'+res.id+'/data',{data:tpl});
+  currentProjectId=res.id;await loadProjects();updateHeader();renderPage();showToast('已创建 '+ind+' 行业项目，含预填数据');
+}
+
+// ===== 数据录入页 =====
+async function renderDataEntryPage(){
+  if(!currentProjectId){document.getElementById('pageContent').innerHTML='<div class="empty-state"><div class="ei">&#128221;</div><h3>请先选择一个项目</h3><p>点击左侧【项目管理】创建或打开项目后再录入数据</p><button class="btn btn-p" onclick="nav(\'project\')">&#128203; 前往项目管理</button></div>';return;}
+  var p=projects.find(function(x){return x.id===currentProjectId;});if(!p)return;
+  var std=p.standard||'GHG',srcs=EMS.filter(function(s){return s.stds.indexOf(std)>=0;});
+  try{currentActivityData=await API.get('/api/projects/'+currentProjectId+'/data');}catch(e){currentActivityData={};}
+  var si={'Scope 1':{title:'&#128293; 范围一：直接排放',cls:'h1',desc:'企业拥有或控制的排放源产生的直接温室气体排放'},'Scope 2':{title:'&#9889; 范围二：能源间接排放',cls:'h2',desc:'企业外购电力和热力所产生的间接温室气体排放'},'Scope 3':{title:'&#127758; 范围三：其他间接排放',cls:'h3',desc:'企业价值链中发生的所有其他间接排放'}};
+  var so=['Scope 1','Scope 2','Scope 3'],sl=['范围一：直接排放','范围二：间接排放','范围三：其他排放'];
+  var h='<div class="card" style="margin-bottom:10px"><span style="font-size:12px;color:var(--tl)">核算标准：<b>'+stdLabel(std)+'</b> &nbsp;|&nbsp; 电网区域：<b>'+(p.grid_region||'全国平均')+'</b> &nbsp;|&nbsp; 行业：<b>'+(p.industry||'通用')+'</b></span></div><div class="steps">';
+  so.forEach(function(s,i){var cs=currentStep===s.toLowerCase().replace(' ','')?'on':'';h+='<div class="step '+cs+'" onclick="currentStep=\''+s.toLowerCase().replace(' ','')+'\';renderPage()"><span class="sn">'+(i+1)+'</span>'+sl[i]+'</div>';});
+  h+='</div>';
+  var ts=currentStep==='scope1'?'Scope 1':currentStep==='scope2'?'Scope 2':'Scope 3',ss=srcs.filter(function(s){return s.scope===ts;}),info=si[ts];
+  h+='<div class="sg"><div class="sh '+info.cls+'">'+info.title+' <span style="font-weight:400;font-size:11px;margin-left:8px">-- '+info.desc+'</span></div><div class="sb">';
+  for(var i=0;i<ss.length;i++){
+    var src=ss[i],val=currentActivityData[src.key]!==undefined?currentActivityData[src.key]:'';
+    h+='<div class="de-row"><label class="de-label">'+src.name+'（'+src.unit+'）<span class="tip">?<span class="tt">'+src.desc+'</span></span></label><input type="text" class="de-input" id="input_'+src.key+'" value="'+val+'" oninput="vn(this)" placeholder="请输入数值"><span class="de-desc">'+src.desc+'</span></div>';
+  }
+  h+='</div></div>';
+  h+='<div class="bgp" style="justify-content:space-between"><div>'+(currentStep!=='scope1'?'<button class="btn btn-o" onclick="currentStep=\''+(currentStep==='scope2'?'scope1':'scope2')+'\';renderPage()">&#11013; 上一步</button>':'')+'</div><div><button class="btn btn-p" onclick="sDFF()">&#128190; 保存数据</button>'+(currentStep!=='scope3'?'<button class="btn btn-b" onclick="sDFF();currentStep=\''+(currentStep==='scope1'?'scope2':'scope3')+'\';renderPage()">下一步 &#10132;</button>':'')+'<button class="btn btn-b" onclick="sDFF();nav(\'result\')" style="margin-left:6px">&#128202; 查看核算结果</button></div></div>';
+  document.getElementById('pageContent').innerHTML=h;
+}
+function vn(el){var v=el.value,c=v.replace(/[^0-9.]/g,''),p=c.split('.'),f=p.length>2?p[0]+'.'+p.slice(1).join(''):c;if(f!==v)el.value=f;el.classList.toggle('err',f!==''&&f!=='.'&&isNaN(parseFloat(f)));}
+async function sDFF(){
+  if(!currentProjectId)return;var p=projects.find(function(x){return x.id===currentProjectId;});if(!p)return;
+  var std=p.standard||'GHG',srcs=EMS.filter(function(s){return s.stds.indexOf(std)>=0;}),data=Object.assign({},currentActivityData);
+  for(var i=0;i<srcs.length;i++){var el=document.getElementById('input_'+srcs[i].key);if(el)data[srcs[i].key]=parseFloat(el.value)||0;}
+  try{await API.put('/api/projects/'+currentProjectId+'/data',{data:data});currentActivityData=data;showToast('数据已保存');}catch(e){alert(e.message);}
+}
+
+// ===== 核算结果页 =====
+async function renderResultPage(){
+  if(!currentProjectId){document.getElementById('pageContent').innerHTML='<div class="empty-state"><div class="ei">&#128202;</div><h3>请先选择一个项目</h3><p>点击左侧【项目管理】创建或打开项目后再查看结果</p><button class="btn btn-p" onclick="nav(\'project\')">前往项目管理</button></div>';return;}
+  Object.values(chartInstances).forEach(function(c){c.destroy();});chartInstances={};
+  var p=projects.find(function(x){return x.id===currentProjectId;});if(!p)return;
+  try{currentActivityData=await API.get('/api/projects/'+currentProjectId+'/data');}catch(e){currentActivityData={};}
+  var r=calcProj(p,currentActivityData);
+  currentEmissionResult=r;
+  if(!r||r.total<=0){document.getElementById('pageContent').innerHTML='<div class="empty-state"><div class="ei">&#128202;</div><h3>暂无排放数据</h3><p>请先在【数据录入】中填写活动数据</p><button class="btn btn-p" onclick="nav(\'data\')">&#128221; 前往数据录入</button></div>';return;}
+  var s1=r.scopeTotals['Scope 1']||0,s2=r.scopeTotals['Scope 2']||0,s3=r.scopeTotals['Scope 3']||0,t=r.total;
+  var ih='';if(t>10000)ih='<div class="alert alert-w">&#9888; 年度排放量超过1万吨，建议核实数据准确性或关注碳排放权交易履约义务。</div>';
+  var ih2='';if((p.revenue||0)>0)ih2='<div class="kr"><div class="kc" style="border-left-color:var(--b)"><div class="kl">&#128176; 营收排放强度</div><div class="kv">'+(t/p.revenue).toFixed(4)+'</div><div class="ku">吨CO2e / 万元</div></div></div>';
+  var dr='';r.details.forEach(function(d){if(d.value>0||d.emission>0.0001)dr+='<tr><td><b>'+d.name+'</b></td><td>'+d.scope+'</td><td>'+d.cat+'</td><td>'+d.value+'</td><td>'+d.unit+'</td><td><b>'+d.emission.toFixed(4)+'</b></td><td>'+d.pct.toFixed(2)+'%</td><td><span class="formula-toggle" onclick="this.nextElementSibling.classList.toggle(\'show\')">查看公式</span><div class="formula-detail">'+esc(d.formula)+'</div></td></tr>';});
+  document.getElementById('pageContent').innerHTML=ih+'<div class="kr"><div class="kc"><div class="kl">&#127757; 总排放量</div><div class="kv">'+t.toFixed(2)+'</div><div class="ku">吨CO2e</div></div><div class="kc s1"><div class="kl">&#128293; 范围一排放</div><div class="kv">'+s1.toFixed(2)+'</div><div class="ku">吨CO2e（'+(t>0?(s1/t*100).toFixed(1):0)+'%）</div></div><div class="kc s2"><div class="kl">&#9889; 范围二排放</div><div class="kv">'+s2.toFixed(2)+'</div><div class="ku">吨CO2e（'+(t>0?(s2/t*100).toFixed(1):0)+'%）</div></div><div class="kc s3"><div class="kl">&#127758; 范围三排放</div><div class="kv">'+s3.toFixed(2)+'</div><div class="ku">吨CO2e（'+(t>0?(s3/t*100).toFixed(1):0)+'%）</div></div></div>'+ih2+'<div class="cr"><div class="cb"><div class="ctl">&#127752; 范围排放分布</div><canvas id="scopeChart"></canvas></div><div class="cb"><div class="ctl">&#128200; 排放分类对比</div><canvas id="categoryChart"></canvas></div></div><div class="card"><div class="ctt">&#128203; 排放明细</div><div class="tw"><table><thead><tr><th>排放源</th><th>范围</th><th>分类</th><th>活动数据</th><th>单位</th><th>排放量(吨CO2e)</th><th>占比</th><th>计算过程</th></tr></thead><tbody>'+dr+'</tbody></table></div></div><div class="bgp" style="margin-top:10px"><button class="ai-analyze-btn" id="aiAnalyzeBtn" onclick="doAIAnalyze()">&#129302; AI 智能分析</button><button class="btn btn-p" onclick="doExport()">&#128229; 导出Excel报告</button><button class="btn btn-b" onclick="doSnap()">&#128248; 生成版本快照</button></div><div class="ai-result" id="aiResultBox"></div>';
+  loadChart(s1,s2,s3,r.categoryTotals);
+}
+function loadChart(s1,s2,s3,cats){
+  var s=document.createElement('script');s.src='https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+  s.onload=function(){setTimeout(function(){
+    var sc=document.getElementById('scopeChart'),cc=document.getElementById('categoryChart');
+    if(sc)chartInstances.scope=new Chart(sc,{type:'doughnut',data:{labels:['范围一（直接排放）','范围二（能源间接）','范围三（其他间接）'],datasets:[{data:[s1,s2,s3],backgroundColor:['#e74c3c','#f39c12','#3498db'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+    if(cc){var cl=Object.keys(cats),cv=Object.values(cats);chartInstances.cat=new Chart(cc,{type:'bar',data:{labels:cl,datasets:[{label:'排放量(吨CO2e)',data:cv,backgroundColor:['#3498db','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c']}]},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}}}});}
+  },100);};
+  s.onerror=function(){showToast('图表库加载失败，请检查网络连接');};
+  document.head.appendChild(s);
+}
+async function doSnap(){if(!currentProjectId)return;var res=await API.post('/api/projects/'+currentProjectId+'/snapshots',{});showToast('版本快照 '+res.version_name+' 已生成');}
+
+// ===== Excel导出 =====
+async function doExport(){
+  if(!currentProjectId)return;var p=projects.find(function(x){return x.id===currentProjectId;});if(!p)return;
+  var r=calcProj(p,currentActivityData);if(!r)return;
+  var s=document.createElement('script');s.src='https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=function(){
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['ESG碳核算助手 4.0 - 碳排放核算报告'],[],['项目名称',p.name],['企业名称',p.company_name||''],['核算年度',p.accounting_year||''],['核算标准',stdLabel(p.standard)],['电网区域',p.grid_region||'全国平均'],['所属行业',p.industry||'通用'],['营业收入（万元）',p.revenue],['产量',p.output_quantity],['强度单位',p.intensity_unit],[],['报告生成时间',new Date().toLocaleString()]]),'项目信息');
+    var ir=[['排放源','范围','分类','单位','活动数据','填写说明']];r.details.forEach(function(d){ir.push([d.name,d.scope,d.cat,d.unit,d.value,'']);});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ir),'原始活动数据');
+    var fr=[['排放源','因子值','单位','来源说明']];fr.push(['外购电力',EGF[p.grid_region||'全国平均']||0.5703,'gCO2/kWh','生态环境部电网因子']);fr.push(['天然气',GF/10000,'tCO2/m3','GB/T 32150-2015']);fr.push(['原煤',1.900,'tCO2/t','发改委行业指南']);fr.push(['汽油',2.925,'tCO2/t','GB/T 32150-2015']);fr.push(['柴油',3.096,'tCO2/t','GB/T 32150-2015']);XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fr),'排放因子');
+    var cr=[['排放源','范围','活动数据','单位','计算公式','排放量(吨CO2e)','占比']];r.details.filter(function(d){return d.emission>0.0001;}).forEach(function(d){cr.push([d.name,d.scope,d.value,d.unit,d.formula,d.emission.toFixed(4),d.pct.toFixed(2)+'%']);});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cr),'计算过程');
+    var sr=[['汇总项','数值','单位']];sr.push(['企业排放总量',r.total.toFixed(4),'吨CO2e']);sr.push([]);sr.push(['按范围分布','','']);for(var k in r.scopeTotals){sr.push([k,r.scopeTotals[k].toFixed(4),'吨CO2e（'+(r.total>0?(r.scopeTotals[k]/r.total*100).toFixed(2):0)+'%）']);}XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sr),'结果汇总');
+    XLSX.writeFile(wb,'碳排放核算报告_'+p.name+'_'+new Date().toISOString().substring(0,10).replace(/-/g,'')+'.xlsx');showToast('报告已导出');
+  };
+  s.onerror=function(){showToast('Excel库加载失败，请检查网络');};
+  document.head.appendChild(s);
+}
+
+// ===== 同比对比页 =====
+function renderComparePage(){
+  document.getElementById('pageContent').innerHTML='<div class="card"><div class="ctt">&#128200; 多项目同比对比</div><p style="font-size:12px;color:var(--tl);margin-bottom:12px">选择多个项目进行排放量横向对比，适用于不同年度或不同企业的排放分析</p><div id="cmpSel" class="bgp" style="margin-bottom:14px"></div><button class="btn btn-p btn-sm" onclick="doCmp()">&#128269; 开始对比</button> <button class="btn btn-o btn-sm" onclick="document.querySelectorAll(\'.cmpChk\').forEach(function(c){c.checked=true;})">全选</button> <button class="btn btn-o btn-sm" onclick="document.querySelectorAll(\'.cmpChk\').forEach(function(c){c.checked=false;});document.getElementById(\'cmpRes\').innerHTML=\'\';">清空</button></div><div id="cmpRes"></div>';
+  var sel=document.getElementById('cmpSel');
+  projects.forEach(function(p){sel.innerHTML+='<label style="display:inline-flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--bd);border-radius:6px"><input type="checkbox" class="cmpChk" value="'+p.id+'">'+esc(p.name)+' ('+(p.accounting_year||'')+')</label>';});
+}
+async function doCmp(){
+  var ids=Array.from(document.querySelectorAll('.cmpChk:checked')).map(function(c){return parseInt(c.value);});
+  if(ids.length<2){showToast('请至少选择2个项目进行对比');return;}
+  var results=[];
+  for(var i=0;i<ids.length;i++){
+    var p=projects.find(function(x){return x.id===ids[i];});if(!p)continue;
+    var ad={};try{ad=await API.get('/api/projects/'+ids[i]+'/data');}catch(e){}
+    var r=calcProj(p,ad);if(r)results.push({name:p.name,year:p.accounting_year||'',total:r.total,s1:r.scopeTotals['Scope 1']||0,s2:r.scopeTotals['Scope 2']||0,s3:r.scopeTotals['Scope 3']||0});
+  }
+  if(results.length<2){document.getElementById('cmpRes').innerHTML='<div class="alert alert-w">需要至少2个项目有排放数据才能对比</div>';return;}
+  var mx=Math.max.apply(null,results.map(function(x){return x.total;}));
+  var trs=results.map(function(r){return'<tr><td><b>'+esc(r.name)+'</b></td><td>'+r.year+'</td><td><b>'+r.total.toFixed(2)+'</b></td><td>'+r.s1.toFixed(2)+'</td><td>'+r.s2.toFixed(2)+'</td><td>'+r.s3.toFixed(2)+'</td><td><div style="background:var(--p);height:18px;width:'+(mx>0?r.total/mx*200:0)+'px;border-radius:4px"></div></td></tr>';}).join('');
+  document.getElementById('cmpRes').innerHTML='<div class="card"><div class="ctt">对比结果</div><div class="tw"><table><thead><tr><th>项目</th><th>年度</th><th>总排放(tCO2e)</th><th>范围一</th><th>范围二</th><th>范围三</th><th>可视化对比</th></tr></thead><tbody>'+trs+'</tbody></table></div></div><div class="cr"><div class="cb"><div class="ctl">&#128202; 排放量堆叠对比</div><canvas id="cmpBar"></canvas></div><div class="cb"><div class="ctl">&#127752; 总量分布</div><canvas id="cmpPie"></canvas></div></div>';
+  loadCmpChart(results);
+}
+function loadCmpChart(results){
+  var s=document.createElement('script');s.src='https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+  s.onload=function(){setTimeout(function(){
+    var bc=document.getElementById('cmpBar'),pc=document.getElementById('cmpPie');
+    if(bc)new Chart(bc,{type:'bar',data:{labels:results.map(function(r){return r.name+' ('+r.year+')';}),datasets:[{label:'范围一',data:results.map(function(r){return r.s1;}),backgroundColor:'#e74c3c'},{label:'范围二',data:results.map(function(r){return r.s2;}),backgroundColor:'#f39c12'},{label:'范围三',data:results.map(function(r){return r.s3;}),backgroundColor:'#3498db'}]},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+    if(pc)new Chart(pc,{type:'doughnut',data:{labels:results.map(function(r){return r.name;}),datasets:[{data:results.map(function(r){return r.total;}),backgroundColor:['#3498db','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c']}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+  },100);};
+  s.onerror=function(){showToast('图表库加载失败');};
+  document.head.appendChild(s);
+}
+
+// ===== 政策更新页（AI驱动）=====
+var policyFactorPending=null;
+
+function renderPolicyPage(){
+  var ind=(projects.find(function(x){return x.id===currentProjectId;})||{}).industry||'通用';
+  var chips=[
+    {label:'📋 最新碳排放政策',q:'2025-2026年最新的碳排放和双碳政策有哪些重要变化？'},
+    {label:'🏭 碳交易市场动态',q:'全国碳交易市场最新动态是什么？配额价格和扩容情况如何？'},
+    {label:'⚡ 电网排放因子更新',q:'最新的中国电网排放因子是多少？与系统内置值有无差异？如有差异请对比并建议更新。'},
+    {label:'🇪🇺 欧盟CBAM影响',q:'欧盟CBAM碳边境调节机制最新进展，对中国出口企业有什么影响？'},
+    {label:'🌱 CCER最新进展',q:'CCER（国家核证自愿减排量）重启后的最新政策和交易情况？'},
+    {label:'🏗️ 我们行业政策',q:ind+'行业最新的碳达峰实施方案和碳核算要求是什么？'}
+  ];
+  var h='<div class="card"><div class="ctt">🤖 AI 实时政策顾问 <span style="font-size:10px;color:var(--tl);font-weight:400;margin-left:8px">由 DeepSeek 驱动</span></div>';
+  h+='<p style="font-size:12px;color:var(--tl);margin-bottom:12px">AI 实时追踪最新双碳政策、排放因子变化、碳交易动态。点击快捷问题或输入你想了解的内容：</p>';
+  h+='<div class="policy-chips">';
+  chips.forEach(function(c,i){
+    h+='<span class="policy-chip" onclick="askPolicy(\''+esc(c.q).replace(/'/g,"\\'")+'\')">'+c.label+'</span>';
+  });
+  h+='</div>';
+  h+='<div class="policy-ask-row"><input id="policyInput" placeholder="输入你想了解的政策问题..." onkeydown="if(event.key===\'Enter\')askPolicy()"><button onclick="askPolicy()">🔍 查询</button></div>';
+  h+='<div class="policy-answer" id="policyAnswer"></div>';
+  h+='<div class="factor-update-banner" id="factorUpdateBanner"><span class="info">📊 AI 建议更新排放因子</span><button class="btn btn-p btn-sm" onclick="applyPolicyFactor()">✅ 一键应用</button></div>';
+  h+='</div>';
+  h+='<div class="card"><div class="ctt">📄 更新历史 <span style="font-size:10px;color:var(--tl);font-weight:400;margin-left:8px">最近50条</span></div><div style="margin-bottom:10px"><button class="btn btn-o btn-sm" onclick="impLocal()">📁 导入本地更新文件</button></div><div class="tw"><table><thead><tr><th>版本</th><th>时间</th><th>说明</th><th>因子数</th><th>来源</th></tr></thead><tbody id="upHistBody"></tbody></table></div></div>';
+  document.getElementById('pageContent').innerHTML=h;
+  var tb=document.getElementById('upHistBody');
+  if(updateHistory.length===0){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--tl)">暂无更新记录，使用上方 AI 顾问查询最新政策或导入本地文件</td></tr>';}
+  else{tb.innerHTML=updateHistory.map(function(h){return'<tr><td><b>'+h.version+'</b></td><td>'+(h.time||'').substring(0,19)+'</td><td>'+esc(h.description||'')+'</td><td>'+(h.factorCount||0)+'条</td><td>'+(h.source||'remote')+'</td></tr>';}).join('');}
+}
+
+async function askPolicy(question){
+  var q=question||document.getElementById('policyInput').value.trim();
+  if(!q){showToast('请输入问题');return;}
+  var box=document.getElementById('policyAnswer');
+  var banner=document.getElementById('factorUpdateBanner');
+  box.innerHTML='<div class="typing"><span></span><span></span><span></span> AI 正在查询最新政策...</div>';
+  box.classList.add('show');
+  if(banner)banner.classList.remove('show');
+  policyFactorPending=null;
+  try{
+    var res=await API.post('/api/ai/policy',{query:q});
+    var reply=res.reply||'暂无回复';
+    var html=reply
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/```factor_update[\s\S]*?```/g,'')
+      .replace(/###\s+(.*?)(?:\n|$)/g,'<h3>$1</h3>')
+      .replace(/##\s+(.*?)(?:\n|$)/g,'<h2>$1</h2>')
+      .replace(/#\s+(.*?)(?:\n|$)/g,'<h1>$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/- (.*?)(?:\n|$)/g,'<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/g,'<ul>$1</ul>')
+      .replace(/<\/ul>\s*<ul>/g,'')
+      .replace(/\n/g,'<br>');
+    box.innerHTML=html;
+    if(res.factor_update){
+      policyFactorPending=res.factor_update;
+      var v=policyFactorPending.version||'未知';
+      var d=policyFactorPending.description||'AI 推荐更新排放因子';
+      banner.querySelector('.info').innerHTML='📊 <b>'+v+'</b>: '+esc(d);
+      banner.classList.add('show');
+    }
+  }catch(e){
+    box.innerHTML='<span style="color:var(--r)">⚠ '+esc(e.message)+'</span>';
+  }
+}
+
+function applyPolicyFactor(){
+  if(!policyFactorPending)return;
+  var data=policyFactorPending;
+  if(data.gridFactors)Object.assign(EGF,data.gridFactors);
+  if(data.fuelFactors)Object.assign(FFT,data.fuelFactors);
+  if(data.scope3Factors)Object.assign(S3F,data.scope3Factors);
+  updateHistory.unshift({version:data.version||'AI-update',description:data.description||'AI推荐更新',factorCount:Object.keys(data.gridFactors||{}).length+Object.keys(data.fuelFactors||{}).length+Object.keys(data.scope3Factors||{}).length,time:new Date().toISOString(),source:'AI推荐'});
+  if(updateHistory.length>50)updateHistory=updateHistory.slice(0,50);
+  saveUpdateHistory();
+  document.getElementById('factorUpdateBanner').classList.remove('show');
+  policyFactorPending=null;
+  showToast('✅ 排放因子已更新！');renderPage();
+}
+
+function impLocal(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){try{var data=JSON.parse(ev.target.result);applyUpdate(data);if(currentPage==='policy')renderPage();}catch(err){showToast('文件解析失败：'+err.message);}};r.readAsText(f);};
+  inp.click();
+}
+
+// ===== 因子库页 =====
+function renderFactorPage(){
+  var h='<div class="card"><div class="ctt">&#128300; 排放因子库</div><p style="font-size:12px;color:var(--tl);margin-bottom:16px">内置官方排放因子数据，来源包括：生态环境部、GB/T 32150-2015 附录B、IPCC Guidelines、GHG Protocol、Defra、发改委行业指南</p><h4 style="margin-bottom:8px;color:var(--pd)">&#9889; 电网排放因子（gCO2/kWh）-- 来源：生态环境部2022年度</h4><div class="tw" style="margin-bottom:18px"><table><thead><tr><th>区域</th><th>排放因子 (gCO2/kWh)</th><th>折算 tCO2/kWh</th><th>适用范围</th></tr></thead><tbody>';
+  for(var k in EGF)h+='<tr><td><b>'+k+'</b></td><td>'+EGF[k]+'</td><td>'+(EGF[k]/1000).toFixed(6)+'</td><td>'+(k==='全国平均'?'全国通用':k+'区域电网覆盖范围')+'</td></tr>';
+  h+='</tbody></table></div><h4 style="margin-bottom:8px;color:var(--pd)">&#128293; 燃料排放因子 -- 来源：GB/T 32150-2015 / 发改委行业指南</h4><div class="tw" style="margin-bottom:18px"><table><thead><tr><th>燃料类型</th><th>排放因子</th><th>单位</th><th>热值/密度参考</th><th>来源</th></tr></thead><tbody><tr><td><b>原煤</b></td><td>1.900</td><td>tCO2/吨</td><td>--</td><td>发改委行业指南</td></tr><tr><td><b>焦炭</b></td><td>2.860</td><td>tCO2/吨</td><td>--</td><td>发改委行业指南</td></tr><tr><td><b>天然气</b></td><td>2.162</td><td>tCO2/万m3</td><td>--</td><td>GB/T 32150-2015 附录B</td></tr><tr><td><b>汽油</b></td><td>2.925</td><td>tCO2/吨</td><td>密度 0.74 kg/L</td><td>GB/T 32150-2015</td></tr><tr><td><b>柴油</b></td><td>3.096</td><td>tCO2/吨</td><td>密度 0.84 kg/L</td><td>GB/T 32150-2015</td></tr></tbody></table></div><h4 style="margin-bottom:8px;color:var(--pd)">&#127758; 范围三排放因子 -- 来源：GHG Protocol / Defra</h4><div class="tw"><table><thead><tr><th>排放源</th><th>排放因子</th><th>单位</th><th>说明</th></tr></thead><tbody><tr><td><b>航空差旅</b></td><td>0.00018</td><td>tCO2/人·公里</td><td>经济舱平均</td></tr><tr><td><b>员工通勤</b></td><td>0.00015</td><td>tCO2/人·公里</td><td>混合交通方式平均</td></tr><tr><td><b>公路货运</b></td><td>0.00010</td><td>tCO2/吨·公里</td><td>重型货车平均</td></tr><tr><td><b>固废处理</b></td><td>0.50</td><td>tCO2/吨</td><td>混合处理方式平均</td></tr></tbody></table></div></div>';
+  document.getElementById('pageContent').innerHTML=h;
+}
+
+// ===== 审计日志页 =====
+async function renderAuditPage(){
+  var logs=[];try{logs=await API.get('/api/audit-logs'+(currentProjectId?'?project_id='+currentProjectId:''));}catch(e){}
+  var lr='';logs.forEach(function(l){lr+='<tr><td>'+(l.created_at||'').substring(0,19)+'</td><td>'+esc(l.action)+'</td><td>'+esc(l.entity_type)+'</td><td>'+esc(l.entity_key)+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.old_value||'')+'</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.new_value||'')+'</td></tr>';});
+  document.getElementById('pageContent').innerHTML='<div class="card"><div class="ctt">&#128214; 审计日志 '+(currentProjectId?'(当前项目·共'+logs.length+'条)':'(全部项目·共'+logs.length+'条)')+'</div><p style="font-size:11px;color:var(--tl);margin-bottom:12px">记录所有数据修改操作，满足碳排放核查审计追溯要求</p><div class="tw"><table><thead><tr><th>时间</th><th>操作</th><th>对象类型</th><th>对象</th><th>旧值</th><th>新值</th></tr></thead><tbody>'+(lr||'<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--tl)">暂无审计日志</td></tr>')+'</tbody></table></div></div>';
+}
+
+// ===== 弹窗/Toast/Tooltip =====
+function showModal(h){document.getElementById('modalBox').innerHTML=h;document.getElementById('modalOverlay').classList.add('show');}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+function showToast(msg){
+  var t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:30px;right:30px;background:#2c3e50;color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;z-index:9999;transition:all 0.3s;opacity:0;transform:translateY(20px)';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';clearTimeout(t._t);t._t=setTimeout(function(){t.style.opacity='0';t.style.transform='translateY(20px)';},2500);
+}
+function initTT(){
+  document.querySelectorAll('.tip').forEach(function(tip){tip.addEventListener('mouseenter',function(){var box=tip.querySelector('.tt');if(!box)return;var r=tip.getBoundingClientRect(),l=r.right+8,t=r.top-10;if(l+270>window.innerWidth)l=r.left-270;if(l<210)l=210;if(t<10)t=r.bottom+5;if(t+80>window.innerHeight)t=window.innerHeight-85;box.style.left=l+'px';box.style.top=t+'px';});});
+}
+
+// ===== AI 智能助手 =====
+var aiChatHistory=[];
+var currentEmissionResult=null; // 缓存当前项目的核算结果
+
+function toggleAIChat(){
+  var panel=document.getElementById('aiPanel');
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open')){
+    document.getElementById('aiChatInput').focus();
+  }
+}
+
+function appendAIMessage(role,text){
+  var body=document.getElementById('aiChatBody');
+  var div=document.createElement('div');
+  div.className='msg '+role;
+  div.innerHTML=text.replace(/\n/g,'<br>');
+  body.appendChild(div);
+  body.scrollTop=body.scrollHeight;
+  return div;
+}
+
+function showAITyping(){
+  var body=document.getElementById('aiChatBody');
+  var div=document.createElement('div');
+  div.className='msg assistant typing';
+  div.id='aiTyping';
+  div.innerHTML='<span></span><span></span><span></span>';
+  body.appendChild(div);
+  body.scrollTop=body.scrollHeight;
+}
+
+function hideAITyping(){
+  var el=document.getElementById('aiTyping');
+  if(el)el.remove();
+}
+
+async function sendAIChat(){
+  var input=document.getElementById('aiChatInput');
+  var msg=input.value.trim();
+  if(!msg)return;
+  input.value='';
+  appendAIMessage('user',msg);
+  aiChatHistory.push({role:'user',content:msg});
+  // 保留最近 20 条上下文
+  if(aiChatHistory.length>20)aiChatHistory=aiChatHistory.slice(-20);
+  showAITyping();
+  try{
+    var res=await API.post('/api/ai/chat',{messages:aiChatHistory});
+    hideAITyping();
+    var reply=res.reply||'抱歉，AI 暂时无法响应。';
+    aiChatHistory.push({role:'assistant',content:reply});
+    appendAIMessage('assistant',reply);
+  }catch(e){
+    hideAITyping();
+    appendAIMessage('assistant','&#9888; '+esc(e.message));
+  }
+}
+
+async function doAIAnalyze(){
+  if(!currentEmissionResult||!currentProjectId)return;
+  var btn=document.getElementById('aiAnalyzeBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ AI 分析中...';}
+  try{
+    var p=projects.find(function(x){return x.id===currentProjectId;});
+    var emission={
+      total:currentEmissionResult.total,
+      scope1:currentEmissionResult.scopeTotals['Scope 1']||0,
+      scope2:currentEmissionResult.scopeTotals['Scope 2']||0,
+      scope3:currentEmissionResult.scopeTotals['Scope 3']||0,
+      details:currentEmissionResult.details
+    };
+    var res=await API.post('/api/ai/analyze',{
+      project_info:p||{},
+      emission_data:emission
+    });
+    var box=document.getElementById('aiResultBox');
+    if(box){
+      box.innerHTML='<h3>&#129302; AI 智能分析报告</h3>'+res.analysis.replace(/\n/g,'<br>');
+      box.classList.add('show');
+    }
+  }catch(e){
+    alert('AI 分析失败：'+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='🤖 AI 智能分析';}
+}
+
+// ===== 渲染 =====
+function renderPage(){
+  updateHeader();setTimeout(initTT,50);
+  switch(currentPage){case'project':renderProjectPage();break;case'data':renderDataEntryPage();break;case'result':renderResultPage();break;case'compare':renderComparePage();break;case'policy':renderPolicyPage();break;case'factor':renderFactorPage();break;case'audit':renderAuditPage();break;default:renderProjectPage();}
+}
+
+// ===== 新手教程 =====
+var tsStep=0;
+var TS=[
+  {title:'&#127793; 欢迎使用 ESG碳核算助手 4.0',content:'<b>v4.0 全新升级：</b><br><br>&#8226; <b>多用户系统</b>：注册账号，数据云端同步<br>&#8226; <b>政策自动更新</b>：启动时自动检测最新排放因子<br>&#8226; <b>行业模板</b>：一键创建项目并预填数据<br>&#8226; <b>同比对比</b>：多项目排放横向对比<br>&#8226; <b>审计日志</b>：全量操作记录，满足核查要求'},
+  {title:'&#128260; 政策自动更新（核心亮点）',content:'<b>v4.0 独有功能</b><br><br>启动时自动检测远程排放因子更新<br>发现新版本 &#8594; 红色徽章提示 &#8594; 弹窗详情 &#8594; 一键更新<br><br>左侧【政策更新】可手动检查、配置更新源、导入本地文件<br>每次更新都记录在更新历史中，审计可追溯'},
+  {title:'&#128203; 创建项目（行业智能匹配）',content:'左侧【项目管理】&#8594;【新建项目】<br>或使用【行业模板快速创建】一键生成<br><br>选择行业后自动推荐核算标准、电网区域、重点关注排放源<br>创建时自动预填该行业的典型排放数据'},
+  {title:'&#128221; 录入数据 + &#128202; 核算结果',content:'按 Scope 1 &#8594; 2 &#8594; 3 分步录入数据<br>每个字段有 ? 提示按钮<br><br>自动计算 &#8594; KPI卡片 + 饼图 + 柱状图 + 明细表<br>超1万吨自动黄色预警<br>一键导出 Excel（6张工作表）'},
+  {title:'&#128640; 开始使用',content:'教程结束！<br><br>建议操作路径：<br>1. 用行业模板快速创建项目<br>2. 到数据录入查看预填数据<br>3. 到核算结果查看图表<br>4. 试试同比对比和导出功能<br>5. 换个浏览器注册另一个账号测试多用户隔离'}
+];
+function showTutorial(step){
+  tsStep=step;var s=TS[step];var dots=TS.map(function(_,i){return'<span style="font-size:'+(i===step?'16px':'10px')+';color:'+(i===step?'var(--p)':'#ccc')+'">&#9679;</span>';}).join('');
+  showModal('<h3>'+s.title+'</h3><div style="min-height:160px;line-height:1.9;font-size:13px">'+s.content+'</div><div style="display:flex;justify-content:center;gap:10px;margin:18px 0">'+dots+'</div><div class="bgp" style="justify-content:space-between"><div>'+(step>0?'<button class="btn btn-o" onclick="showTutorial('+(step-1)+')">&#11013; 上一步</button>':'')+(step<TS.length-1?'<button class="btn btn-o" onclick="closeModal()">跳过教程</button>':'')+'</div>'+(step<TS.length-1?'<button class="btn btn-p" onclick="showTutorial('+(step+1)+')">下一步 &#10132;</button>':'<button class="btn btn-p" onclick="finishTutorial()">开始使用 &#128640;</button>')+'</div>');
+}
+function finishTutorial(){localStorage.setItem('esg_tutorial_shown','1');closeModal();}
+
+// ===== 初始化 =====
+function init(){
+  document.querySelectorAll('.ni').forEach(function(el){el.addEventListener('click',function(){nav(this.dataset.page);});});
+  document.getElementById('btnLogin').addEventListener('click',doLogin);
+  document.getElementById('btnRegister').addEventListener('click',doRegister);
+  document.getElementById('linkRegister').addEventListener('click',function(e){e.preventDefault();showRegister();});
+  document.getElementById('linkLogin').addEventListener('click',function(e){e.preventDefault();showLogin();});
+  document.getElementById('btnLogout').addEventListener('click',doLogout);
+  document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  document.getElementById('projectSelect').addEventListener('change',onPS);
+  API.token=sessionStorage.getItem('esg_token')||'';
+  if(API.token){showApp();}else{refreshPS();}
+  // 首次使用显示教程
+  if(!localStorage.getItem('esg_tutorial_shown')){setTimeout(function(){showTutorial(0);},600);}
+  // 自动检查政策更新
+  if(localStorage.getItem('esg_auto_check')!=='0'){setTimeout(function(){checkUpdate(true);},3000);}
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
